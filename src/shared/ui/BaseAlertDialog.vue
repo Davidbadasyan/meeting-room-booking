@@ -10,22 +10,32 @@ import {
   AlertDialogTitle,
 } from '@/shared/ui/primitives/alert-dialog'
 
-defineProps<{
+const { returnFocus } = defineProps<{
   title: string
   description: string
   confirmLabel: string
   isPending: boolean
+  /** Where focus goes on close, e.g. when the element that opened it is gone. */
+  returnFocus?: () => HTMLElement | undefined
 }>()
 
 const emit = defineEmits<{ confirm: [] }>()
 
 const isOpen = defineModel<boolean>('open', { required: true })
+
+function onCloseAutoFocus(event: Event) {
+  const target = returnFocus?.()
+  if (target === undefined) return
+
+  event.preventDefault()
+  target.focus()
+}
 </script>
 
 <!-- The confirm button is a plain button, so the dialog stays open while the request runs. -->
 <template>
   <AlertDialog v-model:open="isOpen">
-    <AlertDialogContent>
+    <AlertDialogContent @close-auto-focus="onCloseAutoFocus">
       <AlertDialogHeader>
         <AlertDialogTitle>{{ title }}</AlertDialogTitle>
         <AlertDialogDescription>{{ description }}</AlertDialogDescription>
