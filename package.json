@@ -67,7 +67,7 @@
     "vue-tsc": "^3.3.11"
   },
   "engines": {
-    "node": "^22.18.0 || >=24.12.0"
+    "node": ">=22.22.0"
   },
   "msw": {
     "workerDirectory": [
