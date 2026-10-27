@@ -28,3 +28,6 @@ export {
   type BookingDraftDto,
   type BookingDto,
 } from '@/entities/booking/api/dto'
+export { BOOKINGS_API_KEY, type BookingsApi } from '@/entities/booking/api/bookingsApi'
+export { createHttpBookingsApi } from '@/entities/booking/api/httpBookingsApi'
+export { useBookingsApi } from '@/entities/booking/api/queries'

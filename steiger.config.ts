@@ -8,11 +8,14 @@ export default defineConfig([
     ignores: ['./src/mocks/**'],
   },
   {
-    // TODO: back to 'error' once pages/features consume the slices (STEPS.md step 6).
     rules: {
-      'fsd/insignificant-slice': 'warn',
       // The project uses the @/ alias everywhere, including inside a slice.
       'fsd/import-locality': 'off',
     },
+  },
+  {
+    // The architecture spec names this segment `providers` (Vue plugins installed in main.ts).
+    files: ['./src/app/providers/**'],
+    rules: { 'fsd/segments-by-purpose': 'off' },
   },
 ])

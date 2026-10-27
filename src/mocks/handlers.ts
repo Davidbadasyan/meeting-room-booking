@@ -14,6 +14,7 @@ import {
 } from '@/entities/booking'
 import {
   HTTP_STATUS,
+  readJson,
   type ApiErrorBody,
   type ApiErrorCode,
   type ApiErrorDetail,
@@ -84,15 +85,6 @@ function ruleErrorResponse(errors: BookingError[]): ErrorResponse {
     'The booking is invalid.',
     errors,
   )
-}
-
-/** `request.json()` throws on an empty or malformed body; zod then reports it as invalid. */
-async function readJson(request: Request): Promise<unknown> {
-  try {
-    return await request.json()
-  } catch {
-    return undefined
-  }
 }
 
 function shouldSimulateConflictByDefault(request: Request): boolean {

@@ -36,3 +36,6 @@ export const bookingPatchDtoSchema = bookingDraftDtoSchema.partial()
 
 export type BookingDto = z.infer<typeof bookingDtoSchema>
 export type BookingDraftDto = z.infer<typeof bookingDraftDtoSchema>
+
+/** What the client sends (before the server trims the title). */
+export type BookingDraftRequestDto = z.input<typeof bookingDraftDtoSchema>

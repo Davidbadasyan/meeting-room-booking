@@ -2,6 +2,7 @@ import '@/app/styles/main.css'
 
 import { createApp } from 'vue'
 import App from '@/app/App.vue'
+import { apiProvider } from '@/app/providers/api'
 import { API_MODE } from '@/shared/config'
 
 // In mock mode the MSW worker is the backend, so it runs in production builds too.
@@ -16,7 +17,7 @@ async function enableMocking() {
 
 async function startApp() {
   await enableMocking()
-  createApp(App).mount('#app')
+  createApp(App).use(apiProvider).mount('#app')
 }
 
 startApp()
