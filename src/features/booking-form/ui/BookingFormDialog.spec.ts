@@ -116,4 +116,17 @@ describe('BookingFormDialog', () => {
     expect(document.getElementById(errorId)?.textContent?.trim()).toBe('Choose an end time')
     expect(selectField('Start').value).toBe('10:00')
   })
+
+  it('moves focus to the first field with an error after a failed submit', async () => {
+    mountDialog({ date: TOMORROW })
+    await vi.waitFor(() => expect(document.querySelector('[role="dialog"]')).not.toBeNull())
+    await choose('Start', '10:00')
+
+    const submitButton = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent?.trim() === 'Create booking',
+    )
+    submitButton?.click()
+
+    await vi.waitFor(() => expect(document.activeElement).toBe(selectField('End')))
+  })
 })

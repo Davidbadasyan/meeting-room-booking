@@ -3,7 +3,7 @@ import axe from 'axe-core'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { Booking } from '@/entities/booking'
-import { mountWithProviders, startTestBackend, type TestBackend } from '@/mocks/testing'
+import { mountWithProviders, startTestBackend } from '@/mocks/testing'
 import BookingDayPage from '@/pages/booking-day/ui/BookingDayPage.vue'
 
 // Local time: 2026-10-27 12:10
@@ -35,8 +35,8 @@ async function accessibilityViolations(): Promise<string[]> {
   )
 }
 
-/** Mounts the page on TODAY against a backend the test has already prepared. */
-function mountPage(_backend: TestBackend) {
+/** Mounts the page on TODAY; start the test backend first. */
+function mountPage() {
   window.history.replaceState(null, '', `/?date=${TODAY}`)
   const { wrapper } = mountWithProviders(BookingDayPage, { clock: () => NOW })
   mounted = wrapper
@@ -50,14 +50,16 @@ function clickButton(selector: string) {
 
 describe('BookingDayPage accessibility (axe)', () => {
   it('has no violations in the day view with past time, started and upcoming bookings', async () => {
-    mountPage(startTestBackend(server, BOOKINGS, NOW))
+    startTestBackend(server, BOOKINGS, NOW)
+    mountPage()
     await vi.waitFor(() => expect(document.body.textContent).toContain('In progress'))
 
     expect(await accessibilityViolations()).toEqual([])
   })
 
   it('has no violations with the booking form open', async () => {
-    mountPage(startTestBackend(server, BOOKINGS, NOW))
+    startTestBackend(server, BOOKINGS, NOW)
+    mountPage()
     await vi.waitFor(() => clickButton('button[aria-label="Book from 16:00"]'))
     await vi.waitFor(() => expect(document.querySelector('[role="dialog"]')).not.toBeNull())
 
@@ -65,7 +67,8 @@ describe('BookingDayPage accessibility (axe)', () => {
   })
 
   it('has no violations with the delete confirmation open', async () => {
-    mountPage(startTestBackend(server, BOOKINGS, NOW))
+    startTestBackend(server, BOOKINGS, NOW)
+    mountPage()
     await vi.waitFor(() => clickButton('button[aria-label="Delete 14:00–15:30, Untitled"]'))
     await vi.waitFor(() => expect(document.querySelector('[role="alertdialog"]')).not.toBeNull())
 
@@ -75,7 +78,7 @@ describe('BookingDayPage accessibility (axe)', () => {
   it('has no violations in the error state', async () => {
     const backend = startTestBackend(server, [], NOW)
     backend.simulateListFailure()
-    mountPage(backend)
+    mountPage()
     await vi.waitFor(() => expect(document.body.textContent).toContain('Could not load bookings'))
 
     expect(await accessibilityViolations()).toEqual([])

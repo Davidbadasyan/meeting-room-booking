@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef, useTemplateRef } from 'vue'
+import { computed, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import type { Booking } from '@/entities/booking'
 import { BookingFormDialog } from '@/features/booking-form'
 import { DeleteBookingDialog } from '@/features/delete-booking'
@@ -8,12 +8,23 @@ import { formatLongDate, type Time } from '@/shared/lib/time'
 import { BaseButton, BaseErrorBoundary } from '@/shared/ui'
 import { BookingTimeline } from '@/widgets/booking-timeline'
 
+const APP_NAME = 'Meeting Room Booking'
+
 const { selectedDate, isPast, selectDate, goToToday, goToPreviousDay, goToNextDay } =
   useSelectedDate()
 
 const canCreate = computed(() => !isPast.value)
 const heading = computed(() => formatLongDate(selectedDate.value))
 const headingElement = useTemplateRef<HTMLElement>('heading')
+
+// The tab title names the day, for screen-reader users and people with many tabs.
+watch(
+  heading,
+  (day) => {
+    document.title = `${day} · ${APP_NAME}`
+  },
+  { immediate: true },
+)
 
 const isFormOpen = ref(false)
 // A new key per opening gives the form fresh state; the old one can finish its close animation.

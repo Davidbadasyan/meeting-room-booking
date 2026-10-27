@@ -34,7 +34,11 @@ function onCloseAutoFocus(event: Event) {
 <!-- Reka UI gives focus trap, Esc to close, and focus return to the element that opened it. -->
 <template>
   <Dialog v-model:open="isOpen">
-    <DialogContent class="sm:max-w-md" @close-auto-focus="onCloseAutoFocus">
+    <!-- Scrolls inside the viewport, so the buttons stay reachable on short screens. -->
+    <DialogContent
+      class="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md"
+      @close-auto-focus="onCloseAutoFocus"
+    >
       <DialogHeader>
         <DialogTitle>{{ title }}</DialogTitle>
         <DialogDescription>{{ description }}</DialogDescription>

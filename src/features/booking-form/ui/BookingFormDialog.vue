@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useId } from 'vue'
+import { computed, nextTick, useId } from 'vue'
 import { TITLE_MAX_LENGTH, type Booking } from '@/entities/booking'
 import { savedMessages } from '@/features/booking-form/config/messages'
 import { useBookingForm } from '@/features/booking-form/model/useBookingForm'
@@ -79,9 +79,31 @@ function close() {
   isOpen.value = false
 }
 
+/** Fields in screen order, with the control a failed submit should move focus to. */
+const focusableFields: { field: 'start' | 'end' | 'title'; id: string }[] = [
+  { field: 'start', id: ids.start },
+  { field: 'end', id: ids.end },
+  { field: 'title', id: ids.title },
+]
+
+/**
+ * After a failed submit, focus the first field with an error: a screen reader then reads
+ * its label and the linked error, and keyboard users land where the fix is needed.
+ * By id because the <select> sits inside the generated primitive, out of reach of a template ref.
+ */
+function focusFirstInvalidField() {
+  const firstInvalid = focusableFields.find(({ field }) => errors.value[field] !== undefined)
+  if (firstInvalid === undefined) return
+  document.getElementById(firstInvalid.id)?.focus()
+}
+
 async function finish(saving: Promise<Booking | undefined>, message: string) {
   const saved = await saving
-  if (saved === undefined) return
+  if (saved === undefined) {
+    await nextTick()
+    focusFirstInvalidField()
+    return
+  }
 
   toast.success(message)
   close()

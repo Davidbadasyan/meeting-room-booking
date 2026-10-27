@@ -133,3 +133,14 @@
   outline: 2px solid var(--foreground);
   outline-offset: 2px;
 }
+
+/* Respect "reduce motion": dialogs, toasts and skeletons appear without animating. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

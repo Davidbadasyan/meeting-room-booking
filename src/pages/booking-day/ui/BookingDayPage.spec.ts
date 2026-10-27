@@ -97,3 +97,14 @@ describe('BookingDayPage: server conflict (rule 8)', () => {
     expect(document.querySelector('[role="dialog"]')).not.toBeNull()
   })
 })
+
+describe('BookingDayPage: document title', () => {
+  it('names the selected day in the tab title', async () => {
+    window.history.replaceState(null, '', `/?date=${TOMORROW}`)
+    startTestBackend(server, [], NOW)
+    const { wrapper } = mountWithProviders(BookingDayPage, { clock: () => NOW })
+    mounted = wrapper
+
+    expect(document.title).toBe('Wednesday, 28 October 2026 · Meeting Room Booking')
+  })
+})

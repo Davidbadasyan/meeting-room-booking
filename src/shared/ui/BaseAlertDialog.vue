@@ -37,7 +37,10 @@ function onCloseAutoFocus(event: Event) {
 <!-- The confirm button is a plain button, so the dialog stays open while the request runs. -->
 <template>
   <AlertDialog v-model:open="isOpen">
-    <AlertDialogContent @close-auto-focus="onCloseAutoFocus">
+    <AlertDialogContent
+      class="max-h-[calc(100dvh-2rem)] overflow-y-auto"
+      @close-auto-focus="onCloseAutoFocus"
+    >
       <AlertDialogHeader>
         <AlertDialogTitle>{{ title }}</AlertDialogTitle>
         <AlertDialogDescription>{{ description }}</AlertDialogDescription>
