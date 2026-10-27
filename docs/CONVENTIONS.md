@@ -123,3 +123,13 @@ npm test             # Vitest
 | Root `tsconfig.json` repeats the `@/*` path | The shadcn-vue CLI only reads the root config; it has `files: []`, so compilation is unaffected |
 | `BaseSelect` wraps a native `<select>`, not Reka's custom Select | Keyboard, screen-reader and mobile pickers work out of the box for time slots |
 | Steiger `insignificant-slice` is `warn` until every slice is used by the UI (back to `error` in Step 6) | Features exist before the pages that use them |
+
+- Vue 3.5 stable (not 3.6 RC / Vapor).
+- `defineModel()` for two-way binding; plain `v-model` by default, expanded
+  `:model-value` + `@update:model-value` only when the parent must intercept.
+- Reactive props destructure with JS defaults; no `withDefaults`. Wrap
+  destructured props in a getter inside `watch()`.
+- `useId()` for every label/input pair and aria-describedby.
+- `useTemplateRef()` for DOM refs.
+- Same-name shorthand: `:booking` instead of `:booking="booking"`.
+- `defineSlots()` for typed slots in shared/ui components.

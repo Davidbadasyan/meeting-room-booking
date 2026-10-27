@@ -3,6 +3,7 @@ import '@/app/styles/main.css'
 import { createApp } from 'vue'
 import App from '@/app/App.vue'
 import { apiProvider } from '@/app/providers/api'
+import { errorHandlerProvider } from '@/app/providers/errorHandler'
 import { vueQueryProvider } from '@/app/providers/vueQuery'
 import { API_MODE } from '@/shared/config'
 
@@ -18,7 +19,7 @@ async function enableMocking() {
 
 async function startApp() {
   await enableMocking()
-  createApp(App).use(vueQueryProvider).use(apiProvider).mount('#app')
+  createApp(App).use(errorHandlerProvider).use(vueQueryProvider).use(apiProvider).mount('#app')
 }
 
 startApp()
