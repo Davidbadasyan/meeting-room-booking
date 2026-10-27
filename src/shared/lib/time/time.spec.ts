@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { generateTimeOptions, isValidTime, minutesToTime, timeToMinutes } from './time'
+import { generateTimeOptions, minutesToTime, TIME_PATTERN, timeToMinutes } from './time'
 
 describe('timeToMinutes / minutesToTime', () => {
   it('converts both ways', () => {
@@ -11,24 +11,19 @@ describe('timeToMinutes / minutesToTime', () => {
   })
 
   it('round-trips', () => {
-    for (const t of ['09:00', '12:45', '18:00']) expect(minutesToTime(timeToMinutes(t))).toBe(t)
-  })
-
-  it('rejects malformed input', () => {
-    expect(() => timeToMinutes('9:00')).toThrow('Invalid time')
-    expect(() => timeToMinutes('24:00')).toThrow('Invalid time')
-    expect(() => minutesToTime(-1)).toThrow('out of range')
-    expect(() => minutesToTime(1440)).toThrow('out of range')
-    expect(() => minutesToTime(1.5)).toThrow('out of range')
+    for (const time of ['09:00', '12:45', '18:00']) {
+      expect(minutesToTime(timeToMinutes(time))).toBe(time)
+    }
   })
 })
 
-describe('isValidTime', () => {
-  it('validates time format', () => {
-    expect(isValidTime('09:00')).toBe(true)
-    expect(isValidTime('9:00')).toBe(false)
-    expect(isValidTime('12:60')).toBe(false)
-    expect(isValidTime(900)).toBe(false)
+describe('TIME_PATTERN', () => {
+  it('accepts HH:mm only', () => {
+    expect(TIME_PATTERN.test('09:00')).toBe(true)
+    expect(TIME_PATTERN.test('23:59')).toBe(true)
+    expect(TIME_PATTERN.test('9:00')).toBe(false)
+    expect(TIME_PATTERN.test('24:00')).toBe(false)
+    expect(TIME_PATTERN.test('12:60')).toBe(false)
   })
 })
 

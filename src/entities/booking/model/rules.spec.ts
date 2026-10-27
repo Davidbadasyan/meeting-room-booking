@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Booking, BookingDraft } from './booking'
-import { isBookingLocked, overlaps, validateBooking } from './rules'
+import { hasStarted, isOverlapping, validateBooking } from './rules'
 
 // Local time: 2026-10-27 12:00
 const NOW = new Date(2026, 9, 27, 12, 0)
@@ -8,66 +8,71 @@ const TODAY = '2026-10-27'
 const TOMORROW = '2026-10-28'
 const YESTERDAY = '2026-10-26'
 
-const draft = (start: string, end: string, date = TOMORROW): BookingDraft => ({ date, start, end })
+function draft(start: string, end: string, date = TOMORROW): BookingDraft {
+  return { date, start, end }
+}
 
-const codes = (d: BookingDraft, existing: Booking[] = [], editingId?: string) =>
-  validateBooking(d, existing, NOW, editingId).map((e) => e.code)
+function errorCodes(booking: BookingDraft, existing: Booking[] = [], editingId?: string) {
+  return validateBooking(booking, existing, NOW, editingId).map((error) => error.code)
+}
 
 describe('validateBooking', () => {
-  it('accepts a normal booking', () => {
-    expect(codes(draft('10:00', '11:00'))).toEqual([])
+  it('accepts a normal booking, with or without a title', () => {
+    expect(errorCodes(draft('10:00', '11:00'))).toEqual([])
+    expect(errorCodes({ ...draft('10:00', '11:00'), title: 'Standup' })).toEqual([])
   })
 
-  it('treats title as optional', () => {
-    expect(codes({ ...draft('10:00', '11:00'), title: 'Standup' })).toEqual([])
-    expect(codes(draft('10:00', '11:00'))).toEqual([])
+  it('returns the field and a message with each error', () => {
+    const [error] = validateBooking(draft('10:00', '10:15'), [], NOW)
+    expect(error).toEqual({
+      code: 'TOO_SHORT',
+      field: 'end',
+      message: 'Minimum duration is 30 minutes',
+    })
   })
 
   describe('working hours 09:00–18:00', () => {
     it('allows a 09:00 start and an 18:00 end', () => {
-      expect(codes(draft('09:00', '10:00'))).toEqual([])
-      expect(codes(draft('17:00', '18:00'))).toEqual([])
+      expect(errorCodes(draft('09:00', '10:00'))).toEqual([])
+      expect(errorCodes(draft('17:00', '18:00'))).toEqual([])
     })
 
-    it('rejects a start before 09:00', () => {
-      expect(codes(draft('08:45', '09:30'))).toEqual(['OUTSIDE_WORKING_HOURS'])
+    it('rejects a start before 09:00 on the start field', () => {
+      const [error] = validateBooking(draft('08:45', '09:30'), [], NOW)
+      expect(error).toMatchObject({ code: 'OUTSIDE_WORKING_HOURS', field: 'start' })
     })
 
-    it('rejects an end after 18:00', () => {
-      expect(codes(draft('17:30', '18:15'))).toEqual(['OUTSIDE_WORKING_HOURS'])
-    })
-
-    it('reports the field that is out of range', () => {
-      const errors = validateBooking(draft('17:30', '18:15'), [], NOW)
-      expect(errors[0]?.field).toBe('end')
+    it('rejects an end after 18:00 on the end field', () => {
+      const [error] = validateBooking(draft('17:30', '18:15'), [], NOW)
+      expect(error).toMatchObject({ code: 'OUTSIDE_WORKING_HOURS', field: 'end' })
     })
   })
 
   describe('start < end', () => {
     it('rejects start equal to end', () => {
-      expect(codes(draft('10:00', '10:00'))).toEqual(['START_NOT_BEFORE_END'])
+      expect(errorCodes(draft('10:00', '10:00'))).toEqual(['START_NOT_BEFORE_END'])
     })
 
-    it('rejects start after end, without also reporting duration errors', () => {
-      expect(codes(draft('11:00', '10:00'))).toEqual(['START_NOT_BEFORE_END'])
+    it('rejects start after end, without also reporting TOO_SHORT', () => {
+      expect(errorCodes(draft('11:00', '10:00'))).toEqual(['START_NOT_BEFORE_END'])
     })
   })
 
   describe('duration', () => {
     it('accepts exactly 30 minutes', () => {
-      expect(codes(draft('10:00', '10:30'))).toEqual([])
+      expect(errorCodes(draft('10:00', '10:30'))).toEqual([])
     })
 
     it('rejects 29 minutes', () => {
-      expect(codes(draft('10:00', '10:29'))).toEqual(['TOO_SHORT'])
+      expect(errorCodes(draft('10:00', '10:29'))).toEqual(['TOO_SHORT'])
     })
 
     it('accepts exactly 2 hours', () => {
-      expect(codes(draft('10:00', '12:00'))).toEqual([])
+      expect(errorCodes(draft('10:00', '12:00'))).toEqual([])
     })
 
     it('rejects 2 hours and 1 minute', () => {
-      expect(codes(draft('10:00', '12:01'))).toEqual(['TOO_LONG'])
+      expect(errorCodes(draft('10:00', '12:01'))).toEqual(['TOO_LONG'])
     })
   })
 
@@ -75,8 +80,8 @@ describe('validateBooking', () => {
     const existing: Booking[] = [{ id: 'a', date: TOMORROW, start: '10:00', end: '11:00' }]
 
     it('allows touching on either side', () => {
-      expect(codes(draft('11:00', '12:00'), existing)).toEqual([])
-      expect(codes(draft('09:00', '10:00'), existing)).toEqual([])
+      expect(errorCodes(draft('11:00', '12:00'), existing)).toEqual([])
+      expect(errorCodes(draft('09:00', '10:00'), existing)).toEqual([])
     })
 
     it.each([
@@ -86,35 +91,32 @@ describe('validateBooking', () => {
       ['containing', '09:30', '11:30'],
       ['identical', '10:00', '11:00'],
     ])('rejects %s', (_, start, end) => {
-      expect(codes(draft(start, end), existing)).toEqual(['OVERLAP'])
-    })
-
-    it('returns the conflicting booking', () => {
-      const [error] = validateBooking(draft('10:30', '11:30'), existing, NOW)
-      expect(error?.conflictWith?.id).toBe('a')
+      expect(errorCodes(draft(start, end), existing)).toEqual(['OVERLAP'])
     })
 
     it('ignores bookings on other dates', () => {
-      const other: Booking[] = [{ id: 'b', date: '2026-10-29', start: '10:00', end: '11:00' }]
-      expect(codes(draft('10:00', '11:00'), other)).toEqual([])
+      const otherDay: Booking[] = [{ id: 'b', date: '2026-10-29', start: '10:00', end: '11:00' }]
+      expect(errorCodes(draft('10:00', '11:00'), otherDay)).toEqual([])
     })
   })
 
   describe('past dates and times', () => {
-    it('rejects a past date', () => {
-      expect(codes(draft('10:00', '11:00', YESTERDAY))).toEqual(['PAST_DATE'])
+    it('rejects a past date on the date field', () => {
+      const [error] = validateBooking(draft('10:00', '11:00', YESTERDAY), [], NOW)
+      expect(error).toMatchObject({ code: 'IN_THE_PAST', field: 'date' })
     })
 
-    it('rejects a start time that has passed today', () => {
-      expect(codes(draft('11:30', '12:30', TODAY))).toEqual(['PAST_TIME'])
+    it('rejects a start time that has passed today on the start field', () => {
+      const [error] = validateBooking(draft('11:30', '12:30', TODAY), [], NOW)
+      expect(error).toMatchObject({ code: 'IN_THE_PAST', field: 'start' })
     })
 
     it('allows a start in the current minute today', () => {
-      expect(codes(draft('12:00', '13:00', TODAY))).toEqual([])
+      expect(errorCodes(draft('12:00', '13:00', TODAY))).toEqual([])
     })
 
     it('allows a later time today', () => {
-      expect(codes(draft('14:00', '15:00', TODAY))).toEqual([])
+      expect(errorCodes(draft('14:00', '15:00', TODAY))).toEqual([])
     })
   })
 
@@ -125,51 +127,44 @@ describe('validateBooking', () => {
     ]
 
     it('is valid when the time is unchanged', () => {
-      expect(codes(draft('10:00', '11:00'), existing, 'a')).toEqual([])
+      expect(errorCodes(draft('10:00', '11:00'), existing, 'a')).toEqual([])
     })
 
     it('excludes itself from the overlap check when moved', () => {
-      expect(codes(draft('10:30', '11:30'), existing, 'a')).toEqual([])
+      expect(errorCodes(draft('10:30', '11:30'), existing, 'a')).toEqual([])
     })
 
     it('still detects overlaps with other bookings', () => {
-      expect(codes(draft('12:30', '13:30'), existing, 'a')).toEqual(['OVERLAP'])
+      expect(errorCodes(draft('12:30', '13:30'), existing, 'a')).toEqual(['OVERLAP'])
     })
   })
 
-  describe('malformed input', () => {
-    it('reports invalid date and times', () => {
-      expect(codes({ date: '2026-02-30', start: '10:00', end: '11:00' })).toEqual(['INVALID_DATE'])
-      expect(codes(draft('ten', '11:00'))).toEqual(['INVALID_TIME'])
-      expect(codes(draft('10:00', ''))).toEqual(['INVALID_TIME'])
-    })
-  })
-
-  it('can report several errors at once', () => {
-    expect(codes(draft('08:00', '18:30', YESTERDAY))).toEqual([
+  it('reports every broken rule at once', () => {
+    expect(errorCodes(draft('08:00', '18:30', YESTERDAY))).toEqual([
       'OUTSIDE_WORKING_HOURS',
       'OUTSIDE_WORKING_HOURS',
       'TOO_LONG',
-      'PAST_DATE',
+      'IN_THE_PAST',
     ])
   })
 })
 
-describe('overlaps', () => {
+describe('isOverlapping', () => {
   it('uses half-open intervals', () => {
-    expect(overlaps({ start: '10:00', end: '11:00' }, { start: '11:00', end: '12:00' })).toBe(false)
-    expect(overlaps({ start: '10:00', end: '11:01' }, { start: '11:00', end: '12:00' })).toBe(true)
+    const tenToEleven = { startMinutes: 600, endMinutes: 660 }
+    expect(isOverlapping(tenToEleven, { startMinutes: 660, endMinutes: 720 })).toBe(false)
+    expect(isOverlapping(tenToEleven, { startMinutes: 659, endMinutes: 720 })).toBe(true)
   })
 })
 
-describe('isBookingLocked', () => {
-  it('locks bookings that have started or are on a past day', () => {
-    expect(isBookingLocked({ date: TODAY, start: '11:00' }, NOW)).toBe(true)
-    expect(isBookingLocked({ date: YESTERDAY, start: '15:00' }, NOW)).toBe(true)
+describe('hasStarted', () => {
+  it('is true for bookings that started earlier today or on a past day', () => {
+    expect(hasStarted({ date: TODAY, start: '11:00' }, NOW)).toBe(true)
+    expect(hasStarted({ date: YESTERDAY, start: '15:00' }, NOW)).toBe(true)
   })
 
-  it('does not lock upcoming bookings', () => {
-    expect(isBookingLocked({ date: TODAY, start: '12:00' }, NOW)).toBe(false)
-    expect(isBookingLocked({ date: TOMORROW, start: '09:00' }, NOW)).toBe(false)
+  it('is false for upcoming bookings', () => {
+    expect(hasStarted({ date: TODAY, start: '12:00' }, NOW)).toBe(false)
+    expect(hasStarted({ date: TOMORROW, start: '09:00' }, NOW)).toBe(false)
   })
 })

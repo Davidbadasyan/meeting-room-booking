@@ -14,4 +14,9 @@ async function enableMocking() {
   })
 }
 
-enableMocking().then(() => createApp(App).mount('#app'))
+async function startApp() {
+  await enableMocking()
+  createApp(App).mount('#app')
+}
+
+startApp()

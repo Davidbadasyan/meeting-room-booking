@@ -1,166 +1,196 @@
 import { delay, http, HttpResponse, type DefaultBodyType, type PathParams } from 'msw'
+import type { ZodError } from 'zod'
 import {
   BOOKINGS_ENDPOINT,
-  isBookingLocked,
+  bookingDraftDtoSchema,
+  bookingPatchDtoSchema,
+  createBookingError,
+  hasStarted,
+  isoDateSchema,
   validateBooking,
   type Booking,
   type BookingDraft,
   type BookingError,
 } from '@/entities/booking'
-import type { ApiErrorBody, ApiErrorCode } from '@/shared/api'
-import { isValidDate } from '@/shared/lib/time'
+import {
+  HTTP_STATUS,
+  type ApiErrorBody,
+  type ApiErrorCode,
+  type ApiErrorDetail,
+} from '@/shared/api'
 import { consumeConflictSimulation, hasSimulateConflictFlag } from './conflictSimulation'
 import type { BookingStore } from './store'
+
+const MIN_LATENCY_MS = 300
+const MAX_LATENCY_MS = 800
+const OTHER_USER_TITLE = 'Booked by someone else'
 
 export interface HandlerOptions {
   store: BookingStore
   now?: () => Date
-  /** Random response delay range in ms, so loading states are visible. */
+  /** Response delay range in ms, so loading states are visible. */
   latency?: [min: number, max: number]
   shouldSimulateConflict?: (request: Request) => boolean
 }
 
-const OTHER_USER_TITLE = 'Booked by someone else'
-
-const defaultShouldSimulateConflict = (request: Request) =>
-  hasSimulateConflictFlag(new URL(request.url).search) || consumeConflictSimulation()
+type ErrorResponse = HttpResponse<ApiErrorBody>
 
 function errorResponse(
   status: number,
   code: ApiErrorCode,
   message: string,
-  details?: BookingError[],
-) {
-  return HttpResponse.json<ApiErrorBody>({ error: { code, message, details } }, { status })
+  details?: ApiErrorDetail[],
+): ErrorResponse {
+  return HttpResponse.json({ error: { code, message, details } }, { status })
 }
 
-const str = (value: unknown) => (typeof value === 'string' ? value : '')
-
-function normalizeTitle(value: unknown): string | undefined {
-  const title = str(value).trim()
-  return title === '' ? undefined : title
+function invalidFormatResponse(error: ZodError): ErrorResponse {
+  const details = error.issues.map((issue) => ({
+    code: 'INVALID_FORMAT',
+    field: issue.path.join('.'),
+    message: issue.message,
+  }))
+  return errorResponse(
+    HTTP_STATUS.badRequest,
+    'VALIDATION_ERROR',
+    'The request is invalid.',
+    details,
+  )
 }
 
-async function readBody(request: Request): Promise<Record<string, unknown> | undefined> {
+function notFoundResponse(): ErrorResponse {
+  return errorResponse(HTTP_STATUS.notFound, 'NOT_FOUND', 'Booking not found.')
+}
+
+function alreadyStartedResponse(): ErrorResponse {
+  const details = [createBookingError('ALREADY_STARTED', 'start')]
+  return errorResponse(
+    HTTP_STATUS.badRequest,
+    'VALIDATION_ERROR',
+    'The booking has started.',
+    details,
+  )
+}
+
+/** Only an overlap means "the slot is taken" (409); anything else is bad input (400). */
+function ruleErrorResponse(errors: BookingError[]): ErrorResponse {
+  const isOnlyOverlap = errors.every((error) => error.code === 'OVERLAP')
+  if (isOnlyOverlap) {
+    return errorResponse(HTTP_STATUS.conflict, 'CONFLICT', 'This slot is already booked.', errors)
+  }
+  return errorResponse(
+    HTTP_STATUS.badRequest,
+    'VALIDATION_ERROR',
+    'The booking is invalid.',
+    errors,
+  )
+}
+
+/** `request.json()` throws on an empty or malformed body; zod then reports it as invalid. */
+async function readJson(request: Request): Promise<unknown> {
   try {
-    const body: unknown = await request.json()
-    return body && typeof body === 'object' && !Array.isArray(body)
-      ? (body as Record<string, unknown>)
-      : undefined
+    return await request.json()
   } catch {
     return undefined
   }
 }
 
+function shouldSimulateConflictByDefault(request: Request): boolean {
+  if (hasSimulateConflictFlag(new URL(request.url).search)) return true
+  return consumeConflictSimulation()
+}
+
+function randomBetween(min: number, max: number): number {
+  return min + Math.round(Math.random() * (max - min))
+}
+
 export function createHandlers({
   store,
   now = () => new Date(),
-  latency = [300, 800],
-  shouldSimulateConflict = defaultShouldSimulateConflict,
+  latency = [MIN_LATENCY_MS, MAX_LATENCY_MS],
+  shouldSimulateConflict = shouldSimulateConflictByDefault,
 }: HandlerOptions) {
-  const url = `*${BOOKINGS_ENDPOINT}`
+  const bookingsUrl = `*${BOOKINGS_ENDPOINT}`
+  const bookingUrl = `${bookingsUrl}/:id`
 
-  const wait = () => {
-    const [min, max] = latency
-    return delay(min + Math.round(Math.random() * (max - min)))
+  function wait() {
+    return delay(randomBetween(...latency))
   }
 
-  /** Runs the shared domain rules and decides between 400, 409 and success. */
-  function check(request: Request, draft: BookingDraft, editingId?: string) {
-    let errors = validateBooking(draft, store.all(), now(), editingId)
-
-    if (errors.length === 0 && shouldSimulateConflict(request)) {
-      store.insert({
-        date: draft.date,
-        start: draft.start,
-        end: draft.end,
-        title: OTHER_USER_TITLE,
-      })
-      errors = validateBooking(draft, store.all(), now(), editingId)
-    }
-
-    if (errors.length === 0) return undefined
-    // Fix-your-input problems take priority; 409 means the input is fine but the slot is taken.
-    if (errors.some((e) => e.code !== 'OVERLAP')) {
-      return errorResponse(400, 'VALIDATION_ERROR', 'The booking is invalid.', errors)
-    }
-    return errorResponse(409, 'CONFLICT', 'This slot is already booked.', errors)
+  function findErrors(draft: BookingDraft, editingId?: string): BookingError[] {
+    return validateBooking(draft, store.all(), now(), editingId)
   }
 
-  function lockedResponse() {
-    return errorResponse(400, 'VALIDATION_ERROR', 'This booking has already started.', [
-      {
-        code: 'BOOKING_LOCKED',
-        field: 'start',
-        message: 'Bookings that have already started cannot be changed.',
-      },
-    ])
+  /** Demo: someone else books the same slot just before this request is handled. */
+  function insertCompetingBookingIfSimulated(
+    request: Request,
+    draft: BookingDraft,
+    editingId?: string,
+  ) {
+    const isValid = findErrors(draft, editingId).length === 0
+    if (!isValid) return
+    if (!shouldSimulateConflict(request)) return
+    store.insert({ ...draft, title: OTHER_USER_TITLE })
   }
 
   return [
-    http.get<PathParams, DefaultBodyType, Booking[] | ApiErrorBody>(url, async ({ request }) => {
-      await wait()
-      const date = new URL(request.url).searchParams.get('date')
-      if (!isValidDate(date)) {
-        return errorResponse(400, 'VALIDATION_ERROR', 'Query parameter "date" must be YYYY-MM-DD.')
-      }
-      return HttpResponse.json<Booking[]>(store.byDate(date))
-    }),
+    http.get<PathParams, DefaultBodyType, Booking[] | ApiErrorBody>(
+      bookingsUrl,
+      async ({ request }) => {
+        await wait()
+        const date = isoDateSchema.safeParse(new URL(request.url).searchParams.get('date'))
+        if (!date.success) return invalidFormatResponse(date.error)
 
-    http.post<PathParams, DefaultBodyType, Booking | ApiErrorBody>(url, async ({ request }) => {
-      await wait()
-      const body = await readBody(request)
-      if (!body)
-        return errorResponse(400, 'VALIDATION_ERROR', 'Request body must be a JSON object.')
+        return HttpResponse.json(store.byDate(date.data))
+      },
+    ),
 
-      const draft: BookingDraft = {
-        date: str(body.date),
-        start: str(body.start),
-        end: str(body.end),
-        title: normalizeTitle(body.title),
-      }
-      const failure = check(request, draft)
-      if (failure) return failure
+    http.post<PathParams, DefaultBodyType, Booking | ApiErrorBody>(
+      bookingsUrl,
+      async ({ request }) => {
+        await wait()
+        const body = bookingDraftDtoSchema.safeParse(await readJson(request))
+        if (!body.success) return invalidFormatResponse(body.error)
 
-      return HttpResponse.json<Booking>(store.insert(draft), { status: 201 })
-    }),
+        const draft = body.data
+        insertCompetingBookingIfSimulated(request, draft)
+        const errors = findErrors(draft)
+        if (errors.length > 0) return ruleErrorResponse(errors)
+
+        return HttpResponse.json(store.insert(draft), { status: HTTP_STATUS.created })
+      },
+    ),
 
     http.patch<{ id: string }, DefaultBodyType, Booking | ApiErrorBody>(
-      `${url}/:id`,
+      bookingUrl,
       async ({ request, params }) => {
         await wait()
-        const existing = store.get(params.id)
-        if (!existing) return errorResponse(404, 'NOT_FOUND', 'Booking not found.')
-        if (isBookingLocked(existing, now())) return lockedResponse()
+        const booking = store.get(params.id)
+        if (!booking) return notFoundResponse()
+        if (hasStarted(booking, now())) return alreadyStartedResponse()
 
-        const body = await readBody(request)
-        if (!body)
-          return errorResponse(400, 'VALIDATION_ERROR', 'Request body must be a JSON object.')
+        const body = bookingPatchDtoSchema.safeParse(await readJson(request))
+        if (!body.success) return invalidFormatResponse(body.error)
 
-        const { id, ...current } = existing
-        const draft: BookingDraft = {
-          date: 'date' in body ? str(body.date) : current.date,
-          start: 'start' in body ? str(body.start) : current.start,
-          end: 'end' in body ? str(body.end) : current.end,
-          title: 'title' in body ? normalizeTitle(body.title) : current.title,
-        }
-        const failure = check(request, draft, id)
-        if (failure) return failure
+        const updated = { ...booking, ...body.data }
+        insertCompetingBookingIfSimulated(request, updated, booking.id)
+        const errors = findErrors(updated, booking.id)
+        if (errors.length > 0) return ruleErrorResponse(errors)
 
-        return HttpResponse.json<Booking>(store.replace({ ...draft, id }))
+        return HttpResponse.json(store.replace(updated))
       },
     ),
 
     http.delete<{ id: string }, DefaultBodyType, ApiErrorBody | null>(
-      `${url}/:id`,
+      bookingUrl,
       async ({ params }) => {
         await wait()
-        const existing = store.get(params.id)
-        if (!existing) return errorResponse(404, 'NOT_FOUND', 'Booking not found.')
-        if (isBookingLocked(existing, now())) return lockedResponse()
+        const booking = store.get(params.id)
+        if (!booking) return notFoundResponse()
+        if (hasStarted(booking, now())) return alreadyStartedResponse()
 
-        store.remove(existing.id)
-        return new HttpResponse(null, { status: 204 })
+        store.remove(booking.id)
+        return new HttpResponse(null, { status: HTTP_STATUS.noContent })
       },
     ),
   ]

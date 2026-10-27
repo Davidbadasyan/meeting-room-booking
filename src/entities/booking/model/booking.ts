@@ -12,16 +12,13 @@ export interface Booking {
 export type BookingDraft = Omit<Booking, 'id'>
 
 export type BookingErrorCode =
-  | 'INVALID_DATE'
-  | 'INVALID_TIME'
   | 'OUTSIDE_WORKING_HOURS'
   | 'START_NOT_BEFORE_END'
   | 'TOO_SHORT'
   | 'TOO_LONG'
   | 'OVERLAP'
-  | 'PAST_DATE'
-  | 'PAST_TIME'
-  | 'BOOKING_LOCKED'
+  | 'IN_THE_PAST'
+  | 'ALREADY_STARTED'
 
 export type BookingField = 'date' | 'start' | 'end'
 
@@ -29,6 +26,4 @@ export interface BookingError {
   code: BookingErrorCode
   field: BookingField
   message: string
-  /** For `OVERLAP`: the booking that conflicts with the draft. */
-  conflictWith?: Booking
 }

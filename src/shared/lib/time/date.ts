@@ -1,39 +1,37 @@
 import { format, isValid, parse } from 'date-fns'
-import { timeToMinutes, type Time } from './time'
+import { MINUTES_PER_HOUR, timeToMinutes, type Time } from './time'
 
 /** Calendar date in the user's local timezone, `YYYY-MM-DD`. */
 export type IsoDate = string
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const ISO_DATE_FORMAT = 'yyyy-MM-dd'
 
-export function isValidDate(value: unknown): value is IsoDate {
-  if (typeof value !== 'string' || !DATE_RE.test(value)) return false
-  // Round-trip rejects things like 2026-02-30.
-  const parsed = parse(value, 'yyyy-MM-dd', new Date())
-  return isValid(parsed) && format(parsed, 'yyyy-MM-dd') === value
+/**
+ * True for real calendar dates in `YYYY-MM-DD` form.
+ * Formatting the parsed date back rejects both bad formats and days like 2026-02-30.
+ */
+export function isRealDate(value: string): boolean {
+  const parsed = parse(value, ISO_DATE_FORMAT, new Date(0))
+  if (!isValid(parsed)) return false
+  return format(parsed, ISO_DATE_FORMAT) === value
 }
 
-/** `now` formatted as a local calendar date. */
 export function toIsoDate(now: Date): IsoDate {
-  return format(now, 'yyyy-MM-dd')
+  return format(now, ISO_DATE_FORMAT)
 }
 
-/** Minutes since local midnight for `now`. */
 export function nowInMinutes(now: Date): number {
-  return now.getHours() * 60 + now.getMinutes()
+  return now.getHours() * MINUTES_PER_HOUR + now.getMinutes()
 }
 
-/** True if `date` is before today (local time). ISO dates compare correctly as strings. */
+/** ISO dates sort the same way as strings, so a string comparison is enough. */
 export function isPastDate(date: IsoDate, now: Date): boolean {
   return date < toIsoDate(now)
 }
 
-/**
- * True if `date` + `time` lies before the current minute.
- * Starting in the current minute is still allowed.
- */
+/** Starting in the current minute still counts as not past. */
 export function isPastTime(date: IsoDate, time: Time, now: Date): boolean {
-  const today = toIsoDate(now)
-  if (date !== today) return date < today
+  if (isPastDate(date, now)) return true
+  if (date !== toIsoDate(now)) return false
   return timeToMinutes(time) < nowInMinutes(now)
 }

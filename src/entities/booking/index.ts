@@ -5,6 +5,20 @@ export type {
   BookingErrorCode,
   BookingField,
 } from './model/booking'
-export { findConflict, isBookingLocked, overlaps, validateBooking } from './model/rules'
+export {
+  createBookingError,
+  hasStarted,
+  isOverlapping,
+  validateBooking,
+  type MinuteRange,
+} from './model/rules'
 export { MAX_DURATION, MIN_DURATION, SLOT_STEP, WORK_END, WORK_START } from './config/workingHours'
-export { BOOKINGS_ENDPOINT, type BookingDto } from './api/dto'
+export {
+  BOOKINGS_ENDPOINT,
+  bookingDraftDtoSchema,
+  bookingDtoSchema,
+  bookingPatchDtoSchema,
+  isoDateSchema,
+  type BookingDraftDto,
+  type BookingDto,
+} from './api/dto'

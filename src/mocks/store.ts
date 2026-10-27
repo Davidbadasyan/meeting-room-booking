@@ -1,5 +1,6 @@
 import { addDays } from 'date-fns'
-import type { Booking, BookingDraft } from '@/entities/booking'
+import { z } from 'zod'
+import { bookingDtoSchema, type Booking, type BookingDraft } from '@/entities/booking'
 import { toIsoDate } from '@/shared/lib/time'
 
 export interface BookingStore {
@@ -8,7 +9,7 @@ export interface BookingStore {
   get(id: string): Booking | undefined
   insert(draft: BookingDraft): Booking
   replace(booking: Booking): Booking
-  remove(id: string): boolean
+  remove(id: string): void
 }
 
 export interface Persistence {
@@ -17,38 +18,31 @@ export interface Persistence {
 }
 
 export function createBookingStore(seed: Booking[] = [], persistence?: Persistence): BookingStore {
-  let bookings: Booking[] = persistence?.load() ?? seed.map((b) => ({ ...b }))
+  let bookings = persistence?.load() ?? seed
 
-  const commit = (next: Booking[]) => {
+  function commit(next: Booking[]) {
     bookings = next
     persistence?.save(bookings)
   }
 
   return {
-    all: () => bookings.map((b) => ({ ...b })),
+    all: () => bookings,
     byDate: (date) =>
       bookings
-        .filter((b) => b.date === date)
-        .sort((a, b) => a.start.localeCompare(b.start))
-        .map((b) => ({ ...b })),
-    get: (id) => {
-      const found = bookings.find((b) => b.id === id)
-      return found && { ...found }
-    },
+        .filter((booking) => booking.date === date)
+        .sort((a, b) => a.start.localeCompare(b.start)),
+    get: (id) => bookings.find((booking) => booking.id === id),
     insert: (draft) => {
-      const booking: Booking = { ...draft, id: crypto.randomUUID() }
+      const booking = { ...draft, id: crypto.randomUUID() }
       commit([...bookings, booking])
-      return { ...booking }
+      return booking
     },
-    replace: (booking) => {
-      commit(bookings.map((b) => (b.id === booking.id ? { ...booking } : b)))
-      return { ...booking }
+    replace: (updated) => {
+      commit(bookings.map((booking) => (booking.id === updated.id ? updated : booking)))
+      return updated
     },
     remove: (id) => {
-      const next = bookings.filter((b) => b.id !== id)
-      if (next.length === bookings.length) return false
-      commit(next)
-      return true
+      commit(bookings.filter((booking) => booking.id !== id))
     },
   }
 }
@@ -68,13 +62,16 @@ export function createSeed(now: Date): Booking[] {
 }
 
 const STORAGE_KEY = 'mrb:bookings'
+const savedBookingsSchema = z.array(bookingDtoSchema)
 
-/** localStorage can be missing or throw (private mode, blocked storage); fall back to memory. */
+/** localStorage can be missing or throw (private mode, blocked storage); then we stay in memory. */
 export const localStoragePersistence: Persistence = {
   load() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      return raw ? (JSON.parse(raw) as Booking[]) : undefined
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved === null) return undefined
+      const result = savedBookingsSchema.safeParse(JSON.parse(saved))
+      return result.success ? result.data : undefined
     } catch {
       return undefined
     }
@@ -83,7 +80,7 @@ export const localStoragePersistence: Persistence = {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings))
     } catch {
-      // Persistence is a convenience; the in-memory store still works.
+      // Saving is a convenience; the in-memory store keeps working.
     }
   },
 }

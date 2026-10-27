@@ -1,17 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { isPastDate, isPastTime, isValidDate } from './date'
+import { isPastDate, isPastTime, isRealDate } from './date'
 
 // Local time: 2026-10-27 12:00
 const NOW = new Date(2026, 9, 27, 12, 0)
 
-describe('isValidDate', () => {
-  it('validates real calendar dates', () => {
-    expect(isValidDate('2026-10-27')).toBe(true)
-    expect(isValidDate('2028-02-29')).toBe(true)
-    expect(isValidDate('2026-02-30')).toBe(false)
-    expect(isValidDate('2026-13-01')).toBe(false)
-    expect(isValidDate('27-10-2026')).toBe(false)
-    expect(isValidDate(undefined)).toBe(false)
+describe('isRealDate', () => {
+  it('accepts real calendar dates', () => {
+    expect(isRealDate('2026-10-27')).toBe(true)
+    expect(isRealDate('2028-02-29')).toBe(true)
+  })
+
+  it('rejects impossible days and other formats', () => {
+    expect(isRealDate('2026-02-30')).toBe(false)
+    expect(isRealDate('2026-13-01')).toBe(false)
+    expect(isRealDate('2026-1-5')).toBe(false)
+    expect(isRealDate('27-10-2026')).toBe(false)
+    expect(isRealDate('')).toBe(false)
   })
 })
 

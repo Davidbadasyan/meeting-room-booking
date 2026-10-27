@@ -1,27 +1,109 @@
-import { isPastDate, isPastTime, isValidDate, isValidTime, timeToMinutes } from '@/shared/lib/time'
+import {
+  isPastDate,
+  isPastTime,
+  MINUTES_PER_HOUR,
+  nowInMinutes,
+  timeToMinutes,
+  toIsoDate,
+} from '@/shared/lib/time'
 import { MAX_DURATION, MIN_DURATION, WORK_END, WORK_START } from '../config/workingHours'
-import type { Booking, BookingDraft, BookingError } from './booking'
+import type { Booking, BookingDraft, BookingError, BookingErrorCode, BookingField } from './booking'
 
-/** Half-open intervals: touching boundaries (10:00–11:00 and 11:00–12:00) do not overlap. */
-export function overlaps(a: Pick<Booking, 'start' | 'end'>, b: Pick<Booking, 'start' | 'end'>) {
-  return (
-    timeToMinutes(a.start) < timeToMinutes(b.end) && timeToMinutes(b.start) < timeToMinutes(a.end)
-  )
+const errorMessages: Record<BookingErrorCode, string> = {
+  OUTSIDE_WORKING_HOURS: `Booking must be between ${WORK_START} and ${WORK_END}`,
+  START_NOT_BEFORE_END: 'End time must be after start time',
+  TOO_SHORT: `Minimum duration is ${MIN_DURATION} minutes`,
+  TOO_LONG: `Maximum duration is ${MAX_DURATION / MINUTES_PER_HOUR} hours`,
+  OVERLAP: 'This time overlaps another booking',
+  IN_THE_PAST: 'You cannot book time in the past',
+  ALREADY_STARTED: 'A booking that has already started cannot be changed',
 }
 
-export function findConflict(
-  draft: BookingDraft,
-  existing: readonly Booking[],
-  editingId?: string,
-): Booking | undefined {
-  return existing.find((b) => b.id !== editingId && b.date === draft.date && overlaps(draft, b))
+export function createBookingError(code: BookingErrorCode, field: BookingField): BookingError {
+  return { code, field, message: errorMessages[code] }
+}
+
+export interface MinuteRange {
+  startMinutes: number
+  endMinutes: number
+}
+
+/** Everything a rule needs, with times already converted to minutes. */
+interface RuleInput extends MinuteRange {
+  date: string
+  durationInMinutes: number
+  otherBookingRanges: MinuteRange[]
+  now: Date
+}
+
+interface Rule {
+  code: BookingErrorCode
+  field: BookingField
+  isSatisfied: (input: RuleInput) => boolean
+}
+
+const workdayStartMinutes = timeToMinutes(WORK_START)
+const workdayEndMinutes = timeToMinutes(WORK_END)
+
+function startsWithinWorkingHours({ startMinutes }: RuleInput): boolean {
+  return startMinutes >= workdayStartMinutes
+}
+
+function endsWithinWorkingHours({ endMinutes }: RuleInput): boolean {
+  return endMinutes <= workdayEndMinutes
+}
+
+function isStartBeforeEnd({ startMinutes, endMinutes }: RuleInput): boolean {
+  return startMinutes < endMinutes
+}
+
+function isLongEnough({ durationInMinutes }: RuleInput): boolean {
+  // A zero or negative duration is already reported by isStartBeforeEnd.
+  if (durationInMinutes <= 0) return true
+  return durationInMinutes >= MIN_DURATION
+}
+
+function isShortEnough({ durationInMinutes }: RuleInput): boolean {
+  return durationInMinutes <= MAX_DURATION
+}
+
+function isNotOnPastDate({ date, now }: RuleInput): boolean {
+  return !isPastDate(date, now)
+}
+
+function startsNotEarlierThanNowToday({ date, startMinutes, now }: RuleInput): boolean {
+  if (date !== toIsoDate(now)) return true
+  return startMinutes >= nowInMinutes(now)
+}
+
+function isFreeSlot(input: RuleInput): boolean {
+  return !input.otherBookingRanges.some((range) => isOverlapping(input, range))
+}
+
+const rules: Rule[] = [
+  { code: 'OUTSIDE_WORKING_HOURS', field: 'start', isSatisfied: startsWithinWorkingHours },
+  { code: 'OUTSIDE_WORKING_HOURS', field: 'end', isSatisfied: endsWithinWorkingHours },
+  { code: 'START_NOT_BEFORE_END', field: 'end', isSatisfied: isStartBeforeEnd },
+  { code: 'TOO_SHORT', field: 'end', isSatisfied: isLongEnough },
+  { code: 'TOO_LONG', field: 'end', isSatisfied: isShortEnough },
+  { code: 'IN_THE_PAST', field: 'date', isSatisfied: isNotOnPastDate },
+  { code: 'IN_THE_PAST', field: 'start', isSatisfied: startsNotEarlierThanNowToday },
+  { code: 'OVERLAP', field: 'start', isSatisfied: isFreeSlot },
+]
+
+/** Half-open intervals: 10:00–11:00 and 11:00–12:00 touch but do not overlap. */
+export function isOverlapping(a: MinuteRange, b: MinuteRange): boolean {
+  return a.startMinutes < b.endMinutes && b.startMinutes < a.endMinutes
+}
+
+function toMinuteRange(booking: Pick<Booking, 'start' | 'end'>): MinuteRange {
+  return { startMinutes: timeToMinutes(booking.start), endMinutes: timeToMinutes(booking.end) }
 }
 
 /**
- * Checks every business rule for a draft. Pure: `now` is injected so the result
- * is deterministic and the same function runs in the UI and the mock server.
- *
- * Returns an empty array when the draft is valid.
+ * Checks a draft against every business rule. Returns an empty list when it is valid.
+ * `now` is a parameter so the result is deterministic and the mock server can reuse it.
+ * When editing, pass `editingId` so the booking does not overlap with itself.
  */
 export function validateBooking(
   draft: BookingDraft,
@@ -29,92 +111,31 @@ export function validateBooking(
   now: Date,
   editingId?: string,
 ): BookingError[] {
-  const errors: BookingError[] = []
-
-  const dateOk = isValidDate(draft.date)
-  const startOk = isValidTime(draft.start)
-  const endOk = isValidTime(draft.end)
-
-  if (!dateOk) {
-    errors.push({ code: 'INVALID_DATE', field: 'date', message: 'Enter a valid date.' })
-  }
-  if (!startOk) {
-    errors.push({ code: 'INVALID_TIME', field: 'start', message: 'Enter a valid start time.' })
-  }
-  if (!endOk) {
-    errors.push({ code: 'INVALID_TIME', field: 'end', message: 'Enter a valid end time.' })
-  }
-  if (!startOk || !endOk) return errors
-
-  const start = timeToMinutes(draft.start)
-  const end = timeToMinutes(draft.end)
-  const dayStart = timeToMinutes(WORK_START)
-  const dayEnd = timeToMinutes(WORK_END)
-
-  if (start < dayStart || start > dayEnd) {
-    errors.push({
-      code: 'OUTSIDE_WORKING_HOURS',
-      field: 'start',
-      message: `Start must be between ${WORK_START} and ${WORK_END}.`,
-    })
-  }
-  if (end < dayStart || end > dayEnd) {
-    errors.push({
-      code: 'OUTSIDE_WORKING_HOURS',
-      field: 'end',
-      message: `End must be between ${WORK_START} and ${WORK_END}.`,
-    })
-  }
-
-  if (start >= end) {
-    errors.push({
-      code: 'START_NOT_BEFORE_END',
-      field: 'end',
-      message: 'End time must be after start time.',
-    })
-  } else {
-    const duration = end - start
-    if (duration < MIN_DURATION) {
-      errors.push({
-        code: 'TOO_SHORT',
-        field: 'end',
-        message: `A booking must be at least ${MIN_DURATION} minutes.`,
-      })
-    }
-    if (duration > MAX_DURATION) {
-      errors.push({
-        code: 'TOO_LONG',
-        field: 'end',
-        message: `A booking can be at most ${MAX_DURATION / 60} hours.`,
-      })
-    }
-  }
-
-  if (!dateOk) return errors
-
-  if (isPastDate(draft.date, now)) {
-    errors.push({ code: 'PAST_DATE', field: 'date', message: 'You cannot book a past date.' })
-  } else if (isPastTime(draft.date, draft.start, now)) {
-    errors.push({ code: 'PAST_TIME', field: 'start', message: 'Start time has already passed.' })
-  }
-
-  // Only meaningful for a well-formed interval.
-  if (start < end) {
-    const conflict = findConflict(draft, existing, editingId)
-    if (conflict) {
-      errors.push({
-        code: 'OVERLAP',
-        field: 'start',
-        message: `Overlaps with an existing booking (${conflict.start}–${conflict.end}).`,
-        conflictWith: conflict,
-      })
-    }
-  }
-
-  return errors
+  const input = toRuleInput(draft, existing, now, editingId)
+  const brokenRules = rules.filter((rule) => !rule.isSatisfied(input))
+  return brokenRules.map((rule) => createBookingError(rule.code, rule.field))
 }
 
-/** A booking that has already started (or ended) can no longer be edited or deleted. */
-export function isBookingLocked(booking: Pick<Booking, 'date' | 'start'>, now: Date): boolean {
+function toRuleInput(
+  draft: BookingDraft,
+  existing: readonly Booking[],
+  now: Date,
+  editingId?: string,
+): RuleInput {
+  const { startMinutes, endMinutes } = toMinuteRange(draft)
+  const otherBookings = existing.filter(
+    (booking) => booking.date === draft.date && booking.id !== editingId,
+  )
+  return {
+    date: draft.date,
+    startMinutes,
+    endMinutes,
+    durationInMinutes: endMinutes - startMinutes,
+    otherBookingRanges: otherBookings.map(toMinuteRange),
+    now,
+  }
+}
+
+export function hasStarted(booking: Pick<Booking, 'date' | 'start'>, now: Date): boolean {
   return isPastTime(booking.date, booking.start, now)
 }

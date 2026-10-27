@@ -7,10 +7,10 @@ export interface ApiErrorDetail {
   message: string
 }
 
-export interface ApiErrorBody<Detail extends ApiErrorDetail = ApiErrorDetail> {
+export interface ApiErrorBody {
   error: {
     code: ApiErrorCode
     message: string
-    details?: Detail[]
+    details?: ApiErrorDetail[]
   }
 }
