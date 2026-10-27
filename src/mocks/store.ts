@@ -15,6 +15,9 @@ export interface BookingStore {
 export interface Persistence {
   load(): Booking[] | undefined
   save(bookings: Booking[]): void
+  clear(): void
+  /** Called when another tab changes the saved bookings; `undefined` means they were cleared. */
+  onExternalChange(listener: (saved: Booking[] | undefined) => void): void
 }
 
 export function createBookingStore(seed: Booking[] = [], persistence?: Persistence): BookingStore {
@@ -24,6 +27,11 @@ export function createBookingStore(seed: Booking[] = [], persistence?: Persisten
     bookings = next
     persistence?.save(bookings)
   }
+
+  // Another tab saved or reset the bookings: use its version, so two tabs act like two users.
+  persistence?.onExternalChange((saved) => {
+    bookings = saved ?? seed
+  })
 
   return {
     all: () => bookings,
@@ -64,23 +72,39 @@ export function createSeed(now: Date): Booking[] {
 const STORAGE_KEY = 'mrb:bookings'
 const savedBookingsSchema = z.array(bookingDtoSchema)
 
+function loadSavedBookings(): Booking[] | undefined {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved === null) return undefined
+    const result = savedBookingsSchema.safeParse(JSON.parse(saved))
+    return result.success ? result.data : undefined
+  } catch {
+    return undefined
+  }
+}
+
 /** localStorage can be missing or throw (private mode, blocked storage); then we stay in memory. */
 export const localStoragePersistence: Persistence = {
-  load() {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved === null) return undefined
-      const result = savedBookingsSchema.safeParse(JSON.parse(saved))
-      return result.success ? result.data : undefined
-    } catch {
-      return undefined
-    }
-  },
+  load: loadSavedBookings,
   save(bookings) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings))
     } catch {
       // Saving is a convenience; the in-memory store keeps working.
     }
+  },
+  clear() {
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch {
+      // Nothing saved, nothing to clear.
+    }
+  },
+  onExternalChange(listener) {
+    // The `storage` event only fires in the other tabs, never in the one that wrote.
+    window.addEventListener('storage', (event) => {
+      if (event.key !== STORAGE_KEY) return
+      listener(loadSavedBookings())
+    })
   },
 }

@@ -44,10 +44,17 @@ export function useRefreshBookings() {
     return queryClient.invalidateQueries({ queryKey: allBookingsKey })
   }
 
+  /** After a successful save: the dialog can close now and the list catches up a moment later. */
+  function refreshBookingsInBackground(): void {
+    // Deliberately not awaited. A failed refetch shows up on the query itself (error state).
+    queryClient.invalidateQueries({ queryKey: allBookingsKey })
+  }
+
+  /** After a 409/404 the caller waits, so it can re-validate against the fresh list. */
   async function refreshBookingsIfStale(error: Error): Promise<void> {
     if (!isStaleListError(error)) return
     await refreshBookings()
   }
 
-  return { refreshBookings, refreshBookingsIfStale }
+  return { refreshBookings, refreshBookingsInBackground, refreshBookingsIfStale }
 }

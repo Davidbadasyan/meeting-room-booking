@@ -30,3 +30,18 @@ Add these to the page URL (they can be combined, e.g. `?slow=1&simulateConflict=
 | `?slow=1` | Every response takes 2-4 s, so loading and submitting states are easy to see. |
 
 Each switch fires once per page load; reload to repeat it.
+
+### Real conflicts with two tabs
+
+The mock server keeps its data in `localStorage` and reloads it when another tab changes it,
+so two tabs behave like two users:
+
+1. Open the same day in tab A and tab B.
+2. **409:** in tab A open "New booking" for a free slot and fill it in. In tab B book the same slot.
+   Back in tab A press **Create booking**: the conflict banner appears, the list refreshes, and the
+   form keeps its values.
+3. **404 on edit:** in tab A open **Edit** on a booking. In tab B delete it. Back in tab A press
+   **Save changes**: the form says the booking no longer exists and offers **Create as new booking**.
+
+**Reset demo data** (below the schedule, mock mode only) clears the saved bookings and reloads
+with the seed data; other open tabs switch to the seed data too.

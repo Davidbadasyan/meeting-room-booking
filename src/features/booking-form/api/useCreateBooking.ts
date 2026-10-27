@@ -3,12 +3,13 @@ import { useBookingsApi, useRefreshBookings, type BookingDraft } from '@/entitie
 
 export function useCreateBooking() {
   const api = useBookingsApi()
-  const { refreshBookings, refreshBookingsIfStale } = useRefreshBookings()
+  const { refreshBookingsInBackground, refreshBookingsIfStale } = useRefreshBookings()
 
   return useMutation({
     mutationFn: (draft: BookingDraft) => api.create(draft),
-    onSuccess: refreshBookings,
-    // Vue Query awaits this before `mutateAsync` rejects, so the form re-validates against the fresh list.
+    // Not awaited: the dialog closes and the toast shows right away.
+    onSuccess: refreshBookingsInBackground,
+    // Awaited by Vue Query before `mutateAsync` rejects, so the form re-validates against the fresh list.
     onError: refreshBookingsIfStale,
   })
 }

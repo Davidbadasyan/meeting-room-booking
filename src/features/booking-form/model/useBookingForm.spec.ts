@@ -41,7 +41,7 @@ function cachedBookings(queryClient: ReturnType<typeof mountForm>['queryClient']
 }
 
 describe('useBookingForm: create', () => {
-  it('saves a valid booking and refreshes the list', async () => {
+  it('saves a valid booking and refreshes the list in the background', async () => {
     const backend = startTestBackend(server, [PLANNING], NOW)
     const { result: form, queryClient } = mountForm({ date: TOMORROW })
     form.start.value = '12:00'
@@ -57,8 +57,9 @@ describe('useBookingForm: create', () => {
       title: 'Lunch talk',
     })
     expect(backend.store.byDate(TOMORROW)).toHaveLength(2)
-    expect(cachedBookings(queryClient, TOMORROW)).toHaveLength(2)
     expect(form.submitProblem.value).toBeUndefined()
+    // The list refreshes in the background, after submit has already resolved.
+    await vi.waitFor(() => expect(cachedBookings(queryClient, TOMORROW)).toHaveLength(2))
   })
 
   it('does not send a draft that breaks a rule', async () => {

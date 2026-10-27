@@ -9,5 +9,11 @@ export const store = createBookingStore(createSeed(new Date()), localStoragePers
 
 export const worker = setupWorker(...createHandlers({ store, latency: latencyFor(search) }))
 
+/** Back to the seed bookings in this tab and, through the `storage` event, in the others. */
+export function resetDemoData() {
+  localStoragePersistence.clear()
+  window.location.reload()
+}
+
 if (hasDemoFlag(search, 'simulateConflict')) armConflict()
 if (hasDemoFlag(search, 'simulateError')) armListFailures(Date.now())
