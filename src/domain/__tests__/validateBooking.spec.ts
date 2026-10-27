@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Booking, BookingDraft } from '../types'
-import { overlaps, validateBooking } from '../validateBooking'
+import { isBookingLocked, overlaps, validateBooking } from '../validateBooking'
 
 // Local time: 2026-10-27 12:00
 const NOW = new Date(2026, 9, 27, 12, 0)
@@ -159,5 +159,17 @@ describe('overlaps', () => {
   it('uses half-open intervals', () => {
     expect(overlaps({ start: '10:00', end: '11:00' }, { start: '11:00', end: '12:00' })).toBe(false)
     expect(overlaps({ start: '10:00', end: '11:01' }, { start: '11:00', end: '12:00' })).toBe(true)
+  })
+})
+
+describe('isBookingLocked', () => {
+  it('locks bookings that have started or are on a past day', () => {
+    expect(isBookingLocked({ date: TODAY, start: '11:00' }, NOW)).toBe(true)
+    expect(isBookingLocked({ date: YESTERDAY, start: '15:00' }, NOW)).toBe(true)
+  })
+
+  it('does not lock upcoming bookings', () => {
+    expect(isBookingLocked({ date: TODAY, start: '12:00' }, NOW)).toBe(false)
+    expect(isBookingLocked({ date: TOMORROW, start: '09:00' }, NOW)).toBe(false)
   })
 })

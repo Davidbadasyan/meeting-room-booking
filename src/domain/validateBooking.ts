@@ -113,3 +113,8 @@ export function validateBooking(
 
   return errors
 }
+
+/** A booking that has already started (or ended) can no longer be edited or deleted. */
+export function isBookingLocked(booking: Pick<Booking, 'date' | 'start'>, now: Date): boolean {
+  return isPastTime(booking.date, booking.start, now)
+}

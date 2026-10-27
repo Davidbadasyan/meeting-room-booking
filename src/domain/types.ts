@@ -25,6 +25,7 @@ export type BookingErrorCode =
   | 'OVERLAP'
   | 'PAST_DATE'
   | 'PAST_TIME'
+  | 'BOOKING_LOCKED'
 
 export type BookingField = 'date' | 'start' | 'end'
 

@@ -18,3 +18,9 @@ npm test
 - **Title:** optional in the UI as well as in the type.
 - Starting in the current minute counts as not past (12:00 is bookable at 12:00:30).
 - Bookings are half-open intervals, so 10:00–11:00 and 11:00–12:00 do not overlap.
+
+## Conflict demo
+
+Open the app with `?simulateConflict=1`. The next create or edit makes the mock server insert a
+"Booked by someone else" booking into the same slot first, so the request fails with `409`.
+It fires once per page load; reload with the flag to repeat it.
