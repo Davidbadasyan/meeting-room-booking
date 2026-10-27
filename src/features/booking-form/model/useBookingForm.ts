@@ -5,13 +5,15 @@ import { useSaveBooking } from '@/features/booking-form/api/useSaveBooking'
 import { toDraft, toFormValues, type BookingFormValues } from '@/features/booking-form/model/schema'
 import { useRulesSchema } from '@/features/booking-form/model/useRulesSchema'
 import { useSubmitProblem } from '@/features/booking-form/model/useSubmitProblem'
-import type { IsoDate } from '@/shared/lib/time'
+import type { IsoDate, Time } from '@/shared/lib/time'
 
 export interface UseBookingFormOptions {
   /** The day being booked. */
   date: MaybeRefOrGetter<IsoDate>
   /** The booking being edited; leave empty to create a new one. */
   booking?: MaybeRefOrGetter<Booking | undefined>
+  /** Start time for a new booking, e.g. from a clicked free slot. */
+  initialStart?: MaybeRefOrGetter<Time | undefined>
 }
 
 /**
@@ -20,11 +22,16 @@ export interface UseBookingFormOptions {
  * - 400: the server's details are shown on the matching fields.
  * - 404 (edit): the booking was deleted elsewhere; the list is refreshed.
  */
-export function useBookingForm({ date, booking }: UseBookingFormOptions) {
+export function useBookingForm({ date, booking, initialStart }: UseBookingFormOptions) {
   const editingId = computed(() => toValue(booking)?.id)
+
+  function initialValues(): BookingFormValues {
+    return toFormValues(toValue(date), toValue(booking), toValue(initialStart))
+  }
+
   const form = useForm<BookingFormValues>({
     validationSchema: useRulesSchema(date, editingId),
-    initialValues: toFormValues(toValue(date), toValue(booking)),
+    initialValues: initialValues(),
   })
   const [start] = form.defineField('start')
   const [end] = form.defineField('end')
@@ -32,10 +39,10 @@ export function useBookingForm({ date, booking }: UseBookingFormOptions) {
   const { saveBooking, createBooking } = useSaveBooking(editingId)
   const problem = useSubmitProblem(form)
 
-  // Start over only when a different day or booking is opened, never on a list refresh.
-  watch([() => toValue(date), editingId], () => {
+  // Start over only when a different day, booking or slot is opened, never on a list refresh.
+  watch([() => toValue(date), editingId, () => toValue(initialStart)], () => {
     problem.clearSubmitProblem()
-    form.resetForm({ values: toFormValues(toValue(date), toValue(booking)) })
+    form.resetForm({ values: initialValues() })
   })
 
   async function trySave(
@@ -51,6 +58,20 @@ export function useBookingForm({ date, booking }: UseBookingFormOptions) {
     }
   }
 
+  const validateAndSave = form.handleSubmit((values) => trySave(saveBooking, values))
+  const validateAndCreate = form.handleSubmit((values) => trySave(createBooking, values))
+
+  // `await` unwraps vee-validate's nested promise type into a plain result.
+  async function submit(): Promise<Booking | undefined> {
+    const saved = await validateAndSave()
+    return saved
+  }
+
+  async function submitAsNew(): Promise<Booking | undefined> {
+    const created = await validateAndCreate()
+    return created
+  }
+
   return {
     start,
     end,
@@ -64,8 +85,8 @@ export function useBookingForm({ date, booking }: UseBookingFormOptions) {
     /** After a 404 on edit, the same values can still be saved as a new booking. */
     canCreateAsNew: computed(() => problem.submitProblem.value === 'notFound'),
     /** Validates, then saves. Resolves with the saved booking, or undefined if it failed. */
-    submit: form.handleSubmit((values) => trySave(saveBooking, values)),
+    submit,
     /** Validates, then creates a new booking from the current values. */
-    submitAsNew: form.handleSubmit((values) => trySave(createBooking, values)),
+    submitAsNew,
   }
 }

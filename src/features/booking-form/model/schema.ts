@@ -53,8 +53,9 @@ function addRuleIssues(
   }
 }
 
-export function toFormValues(date: IsoDate, booking?: Booking): BookingFormValues {
-  if (!booking) return { date, start: '', end: '', title: '' }
+/** Values for an edited booking, or an empty form on `date` (optionally with a chosen start). */
+export function toFormValues(date: IsoDate, booking?: Booking, start = ''): BookingFormValues {
+  if (!booking) return { date, start, end: '', title: '' }
 
   return { date: booking.date, start: booking.start, end: booking.end, title: booking.title ?? '' }
 }

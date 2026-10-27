@@ -87,7 +87,7 @@ describe('useBookingForm: 409 conflict', () => {
 
     expect(form.submitProblem.value).toBe('conflict')
     expect(form.submitMessage.value).toBe(
-      'This slot was just taken. The list has been updated, please choose another time.',
+      'This slot was just taken. The list has been updated — please choose another time.',
     )
     expect([form.start.value, form.end.value, form.title.value]).toEqual([
       '16:00',

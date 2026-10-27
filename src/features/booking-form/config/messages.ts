@@ -4,12 +4,17 @@ import { TITLE_MAX_LENGTH } from '@/entities/booking'
 export type SubmitProblem = 'conflict' | 'notFound' | 'invalid' | 'network' | 'failed'
 
 export const submitProblemMessages: Record<SubmitProblem, string> = {
-  conflict: 'This slot was just taken. The list has been updated, please choose another time.',
+  conflict: 'This slot was just taken. The list has been updated — please choose another time.',
   notFound:
     'This booking no longer exists. It may have been deleted by someone else. The list has been updated.',
   invalid: 'The server rejected some fields. Please check them and try again.',
   network: 'Could not reach the server. Check your connection and try again.',
   failed: 'Something went wrong while saving. Please try again.',
+}
+
+export const savedMessages = {
+  created: 'Booking created.',
+  updated: 'Booking updated.',
 }
 
 export const fieldFormatMessages = {

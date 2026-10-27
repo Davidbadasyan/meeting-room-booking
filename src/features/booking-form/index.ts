@@ -9,3 +9,4 @@ export {
   useBookingForm,
   type UseBookingFormOptions,
 } from '@/features/booking-form/model/useBookingForm'
+export { default as BookingFormDialog } from '@/features/booking-form/ui/BookingFormDialog.vue'

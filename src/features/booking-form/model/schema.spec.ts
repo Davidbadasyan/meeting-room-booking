@@ -57,6 +57,10 @@ describe('toFormValues / toDraft', () => {
     expect(toFormValues(TOMORROW)).toEqual({ date: TOMORROW, start: '', end: '', title: '' })
   })
 
+  it('prefills the start of a new booking from a clicked slot', () => {
+    expect(toFormValues(TOMORROW, undefined, '09:30')).toMatchObject({ start: '09:30', end: '' })
+  })
+
   it('prefills an existing booking', () => {
     expect(toFormValues('2026-11-01', { ...PLANNING, title: 'Sync' })).toEqual({
       date: TOMORROW,
