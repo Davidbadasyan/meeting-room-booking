@@ -1,4 +1,5 @@
 import type { VueWrapper } from '@vue/test-utils'
+import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
@@ -106,5 +107,39 @@ describe('BookingDayPage: document title', () => {
     mounted = wrapper
 
     expect(document.title).toBe('Wednesday, 28 October 2026 · Meeting Room Booking')
+  })
+})
+
+describe('BookingDayPage: delete dialog', () => {
+  it('does not carry an error from one booking over to the next', async () => {
+    window.history.replaceState(null, '', `/?date=${TOMORROW}`)
+    startTestBackend(
+      server,
+      [
+        { id: 'a', date: TOMORROW, start: '10:00', end: '11:00', title: 'Planning' },
+        { id: 'b', date: TOMORROW, start: '14:00', end: '15:00', title: 'Review' },
+      ],
+      NOW,
+    )
+    server.use(http.delete('*/api/bookings/:id', () => HttpResponse.error()))
+    const { wrapper } = mountWithProviders(BookingDayPage, { clock: () => NOW })
+    mounted = wrapper
+
+    // Deleting the first booking fails with a network error.
+    await vi.waitFor(() => buttonLabelled('Delete 10:00–11:00, Planning'))
+    buttonLabelled('Delete 10:00–11:00, Planning').click()
+    await vi.waitFor(() => buttonWithText('Delete').closest('[role="alertdialog"]'))
+    const confirm = [...document.querySelectorAll<HTMLButtonElement>('[role="alertdialog"] button')]
+    confirm.find((button) => button.textContent?.trim() === 'Delete')?.click()
+    await vi.waitFor(() =>
+      expect(document.querySelector('[role="alertdialog"] [role="alert"]')).not.toBeNull(),
+    )
+
+    // Cancel, then open delete for the second booking: no old error.
+    buttonWithText('Cancel').click()
+    await vi.waitFor(() => expect(document.querySelector('[role="alertdialog"]')).toBeNull())
+    buttonLabelled('Delete 14:00–15:00, Review').click()
+    await vi.waitFor(() => expect(document.body.textContent).toContain('14:00–15:00: Review'))
+    expect(document.querySelector('[role="alertdialog"] [role="alert"]')).toBeNull()
   })
 })

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import type { Booking } from '@/entities/booking'
-import { BookingFormDialog } from '@/features/booking-form'
+import { BookingFormDialog, hasBookableStart } from '@/features/booking-form'
 import { DeleteBookingDialog } from '@/features/delete-booking'
 import { BookingDatePicker, useSelectedDate } from '@/features/select-date'
+import { useNow } from '@/shared/lib/clock'
 import { formatLongDate, type Time } from '@/shared/lib/time'
 import { BaseButton, BaseErrorBoundary } from '@/shared/ui'
 import { BookingTimeline } from '@/widgets/booking-timeline'
@@ -13,7 +14,9 @@ const APP_NAME = 'Meeting Room Booking'
 const { selectedDate, isPast, selectDate, goToToday, goToPreviousDay, goToNextDay } =
   useSelectedDate()
 
-const canCreate = computed(() => !isPast.value)
+const { now } = useNow()
+// Past days, and today after the last start time (17:30), cannot take a new booking.
+const canCreate = computed(() => hasBookableStart(selectedDate.value, now.value))
 const heading = computed(() => formatLongDate(selectedDate.value))
 const headingElement = useTemplateRef<HTMLElement>('heading')
 
@@ -33,6 +36,8 @@ const editedBooking = shallowRef<Booking>()
 const formStart = ref<Time>()
 
 const isDeleteOpen = ref(false)
+// Like formKey: a new key per opening, so an error from an earlier attempt never carries over.
+const deleteKey = ref(0)
 const bookingToDelete = shallowRef<Booking>()
 
 let openedFrom: HTMLElement | undefined
@@ -66,6 +71,7 @@ function openEdit(booking: Booking) {
 function openDelete(booking: Booking) {
   rememberWhatOpenedTheDialog()
   bookingToDelete.value = booking
+  deleteKey.value += 1
   isDeleteOpen.value = true
 }
 </script>
@@ -112,6 +118,7 @@ function openDelete(booking: Booking) {
     />
     <DeleteBookingDialog
       v-if="bookingToDelete"
+      :key="deleteKey"
       v-model:open="isDeleteOpen"
       :booking="bookingToDelete"
       :return-focus="returnFocus"

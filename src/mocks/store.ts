@@ -28,6 +28,11 @@ export function createBookingStore(seed: Booking[] = [], persistence?: Persisten
     persistence?.save(bookings)
   }
 
+  /** Another tab may have written since our last `storage` event; never write over its changes. */
+  function latest(): Booking[] {
+    return persistence?.load() ?? bookings
+  }
+
   // Another tab saved or reset the bookings: use its version, so two tabs act like two users.
   persistence?.onExternalChange((saved) => {
     bookings = saved ?? seed
@@ -42,15 +47,15 @@ export function createBookingStore(seed: Booking[] = [], persistence?: Persisten
     get: (id) => bookings.find((booking) => booking.id === id),
     insert: (draft) => {
       const booking = { ...draft, id: crypto.randomUUID() }
-      commit([...bookings, booking])
+      commit([...latest(), booking])
       return booking
     },
     replace: (updated) => {
-      commit(bookings.map((booking) => (booking.id === updated.id ? updated : booking)))
+      commit(latest().map((booking) => (booking.id === updated.id ? updated : booking)))
       return updated
     },
     remove: (id) => {
-      commit(bookings.filter((booking) => booking.id !== id))
+      commit(latest().filter((booking) => booking.id !== id))
     },
   }
 }

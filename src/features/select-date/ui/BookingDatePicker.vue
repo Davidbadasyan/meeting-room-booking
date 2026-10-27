@@ -17,9 +17,16 @@ const emit = defineEmits<{
 
 const inputId = useId()
 
-/** The native date input sends '' when cleared; keep the current day instead. */
+const FIRST_FOUR_DIGIT_YEAR = 1000
+
+/**
+ * The native date input sends '' when cleared, and partial years such as 0202-10-27 while a
+ * year is typed digit by digit. Ignore both, so the page does not jump through those dates.
+ */
 function selectPickedDate(value: string) {
   if (value === '') return
+  const isYearComplete = Number(value.slice(0, 4)) >= FIRST_FOUR_DIGIT_YEAR
+  if (!isYearComplete) return
   emit('select', value)
 }
 </script>

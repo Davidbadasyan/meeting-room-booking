@@ -24,7 +24,33 @@ function createFakePersistence(saved?: Booking[]) {
   return { persistence, otherTabWrites: (bookings: Booking[] | undefined) => listener(bookings) }
 }
 
+/** One storage shared by two stores, without `storage` events: the race between two tabs. */
+function createSharedStorage(): Persistence {
+  let saved: Booking[] | undefined
+  return {
+    load: () => saved,
+    save: (bookings) => {
+      saved = bookings
+    },
+    clear: () => {
+      saved = undefined
+    },
+    onExternalChange: () => {},
+  }
+}
+
 describe('createBookingStore', () => {
+  it('keeps bookings written by another tab that has not been announced yet', () => {
+    const storage = createSharedStorage()
+    const tabA = createBookingStore([], storage)
+    const tabB = createBookingStore([], storage)
+
+    tabA.insert({ date: '2026-10-28', start: '10:00', end: '11:00' })
+    tabB.insert({ date: '2026-10-28', start: '12:00', end: '13:00' })
+
+    expect(storage.load()?.map((booking) => booking.start)).toEqual(['10:00', '12:00'])
+  })
+
   it('starts from saved bookings when there are any, otherwise from the seed', () => {
     expect(createBookingStore(SEED, createFakePersistence(OTHER_TAB).persistence).all()).toEqual(
       OTHER_TAB,

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   endTimeOptions,
   formatDuration,
+  hasBookableStart,
   startTimeOptions,
 } from '@/features/booking-form/lib/timeOptions'
 
@@ -51,6 +52,18 @@ describe('endTimeOptions', () => {
       '17:45',
       '18:00',
     ])
+  })
+})
+
+describe('hasBookableStart', () => {
+  it('is true for future days and for today while a start time is left', () => {
+    expect(hasBookableStart('2026-10-28', NOW)).toBe(true)
+    expect(hasBookableStart('2026-10-27', NOW)).toBe(true)
+  })
+
+  it('is false on past days and today after the last start time (17:30)', () => {
+    expect(hasBookableStart('2026-10-26', NOW)).toBe(false)
+    expect(hasBookableStart('2026-10-27', new Date(2026, 9, 27, 17, 31))).toBe(false)
   })
 })
 

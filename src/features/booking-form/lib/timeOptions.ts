@@ -30,6 +30,11 @@ export function startTimeOptions(date: IsoDate, now: Date): SelectOption<Time>[]
   }))
 }
 
+/** False on past days and late in the day, when every start time has already passed. */
+export function hasBookableStart(date: IsoDate, now: Date): boolean {
+  return startTimeOptions(date, now).some((option) => !option.isDisabled)
+}
+
 /** From start + 30 min to start + 2 h, never past 18:00. Empty until a start is chosen. */
 export function endTimeOptions(start: Time | ''): SelectOption<Time>[] {
   if (start === '') return []

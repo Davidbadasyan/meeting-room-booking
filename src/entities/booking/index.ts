@@ -1,17 +1,5 @@
-export type {
-  Booking,
-  BookingDraft,
-  BookingError,
-  BookingErrorCode,
-  BookingField,
-} from '@/entities/booking/model/booking'
-export {
-  createBookingError,
-  hasStarted,
-  isOverlapping,
-  validateBooking,
-  type MinuteRange,
-} from '@/entities/booking/model/rules'
+export type { Booking, BookingDraft, BookingError } from '@/entities/booking/model/booking'
+export { createBookingError, hasStarted, validateBooking } from '@/entities/booking/model/rules'
 export {
   MAX_DURATION,
   MIN_DURATION,
@@ -26,13 +14,11 @@ export {
   bookingDtoSchema,
   bookingPatchDtoSchema,
   isoDateSchema,
-  type BookingDraftDto,
-  type BookingDto,
 } from '@/entities/booking/api/dto'
+// BookingsApi is the contract a real backend implements (see README: switching to a real API).
 export { BOOKINGS_API_KEY, type BookingsApi } from '@/entities/booking/api/bookingsApi'
 export { createHttpBookingsApi } from '@/entities/booking/api/httpBookingsApi'
 export {
-  allBookingsKey,
   bookingsByDateKey,
   useBookingsApi,
   useBookingsQuery,

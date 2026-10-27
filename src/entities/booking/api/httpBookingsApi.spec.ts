@@ -124,6 +124,13 @@ describe('error mapping', () => {
     await expect(api.list(TOMORROW)).rejects.toBeInstanceOf(ServerError)
   })
 
+  it('throws ServerError when a success response is not JSON (e.g. an HTML page)', async () => {
+    server.use(
+      http.all(`${BOOKINGS_URL}*`, () => new HttpResponse('<!doctype html>', { status: 200 })),
+    )
+    await expect(api.list(TOMORROW)).rejects.toBeInstanceOf(ServerError)
+  })
+
   it('throws NetworkError when there is no response', async () => {
     server.use(http.all(`${BOOKINGS_URL}*`, () => HttpResponse.error()))
     await expect(api.list(TOMORROW)).rejects.toBeInstanceOf(NetworkError)

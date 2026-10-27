@@ -1,6 +1,7 @@
 import type { z } from 'zod'
 import { mapHttpError, NetworkError, ServerError } from '@/shared/api/errors'
 import { HTTP_STATUS } from '@/shared/api/httpStatus'
+import { readJson } from '@/shared/api/readJson'
 
 const INVALID_RESPONSE_MESSAGE = 'The server sent an unexpected response.'
 
@@ -20,7 +21,9 @@ export async function httpRequest(url: string, options: RequestOptions = {}): Pr
   if (!response.ok) throw await mapHttpError(response)
   if (response.status === HTTP_STATUS.noContent) return undefined
 
-  return response.json()
+  // A body that is not JSON (e.g. an HTML page from a misconfigured proxy) reads as undefined,
+  // which parseResponse then reports as a ServerError instead of a raw SyntaxError.
+  return readJson(response)
 }
 
 /** `fetch` only rejects when there is no response at all. */
