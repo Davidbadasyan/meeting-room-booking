@@ -18,8 +18,8 @@ import {
   type ApiErrorCode,
   type ApiErrorDetail,
 } from '@/shared/api'
-import { consumeConflictSimulation, hasSimulateConflictFlag } from './conflictSimulation'
-import type { BookingStore } from './store'
+import { consumeConflictSimulation, hasSimulateConflictFlag } from '@/mocks/conflictSimulation'
+import type { BookingStore } from '@/mocks/store'
 
 const MIN_LATENCY_MS = 300
 const MAX_LATENCY_MS = 800

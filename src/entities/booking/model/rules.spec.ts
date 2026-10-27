@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Booking, BookingDraft } from './booking'
-import { hasStarted, isOverlapping, validateBooking } from './rules'
+import type { Booking, BookingDraft } from '@/entities/booking/model/booking'
+import { hasStarted, isOverlapping, validateBooking } from '@/entities/booking/model/rules'
 
 // Local time: 2026-10-27 12:00
 const NOW = new Date(2026, 9, 27, 12, 0)

@@ -1,5 +1,5 @@
 import { format, isValid, parse } from 'date-fns'
-import { MINUTES_PER_HOUR, timeToMinutes, type Time } from './time'
+import { MINUTES_PER_HOUR, timeToMinutes, type Time } from '@/shared/lib/time/time'
 
 /** Calendar date in the user's local timezone, `YYYY-MM-DD`. */
 export type IsoDate = string

@@ -6,7 +6,8 @@
     // Extra safety for array and object lookups, but may have false positives.
     "noUncheckedIndexedAccess": true,
 
-    // Path mapping for cleaner imports.
+    // Path mapping: every import uses the @/ alias.
+    // No baseUrl: it is deprecated in TS 6 and `paths` resolves relative to this file.
     "paths": {
       "@/*": ["./src/*"]
     },

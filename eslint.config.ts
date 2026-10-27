@@ -26,6 +26,21 @@ export default defineConfigWithVueTs(
     files: ['src/**/*.spec.ts'],
   },
 
+  {
+    name: 'app/alias-imports',
+    files: ['src/**/*.{vue,ts}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['./*', '../*'], message: 'Use the @/ alias instead of relative imports.' },
+          ],
+        },
+      ],
+    },
+  },
+
   ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json'),
 
   skipFormatting,

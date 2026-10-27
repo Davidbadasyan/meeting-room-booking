@@ -5,5 +5,12 @@ export {
   TIME_PATTERN,
   timeToMinutes,
   type Time,
-} from './time'
-export { isPastDate, isPastTime, isRealDate, nowInMinutes, toIsoDate, type IsoDate } from './date'
+} from '@/shared/lib/time/time'
+export {
+  isPastDate,
+  isPastTime,
+  isRealDate,
+  nowInMinutes,
+  toIsoDate,
+  type IsoDate,
+} from '@/shared/lib/time/date'

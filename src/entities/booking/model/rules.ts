@@ -6,8 +6,19 @@ import {
   timeToMinutes,
   toIsoDate,
 } from '@/shared/lib/time'
-import { MAX_DURATION, MIN_DURATION, WORK_END, WORK_START } from '../config/workingHours'
-import type { Booking, BookingDraft, BookingError, BookingErrorCode, BookingField } from './booking'
+import {
+  MAX_DURATION,
+  MIN_DURATION,
+  WORK_END,
+  WORK_START,
+} from '@/entities/booking/config/workingHours'
+import type {
+  Booking,
+  BookingDraft,
+  BookingError,
+  BookingErrorCode,
+  BookingField,
+} from '@/entities/booking/model/booking'
 
 const errorMessages: Record<BookingErrorCode, string> = {
   OUTSIDE_WORKING_HOURS: `Booking must be between ${WORK_START} and ${WORK_END}`,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isPastDate, isPastTime, isRealDate } from './date'
+import { isPastDate, isPastTime, isRealDate } from '@/shared/lib/time/date'
 
 // Local time: 2026-10-27 12:00
 const NOW = new Date(2026, 9, 27, 12, 0)

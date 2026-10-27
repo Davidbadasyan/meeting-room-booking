@@ -1,2 +1,2 @@
-export type { ApiErrorBody, ApiErrorCode, ApiErrorDetail } from './errors'
-export { HTTP_STATUS } from './httpStatus'
+export type { ApiErrorBody, ApiErrorCode, ApiErrorDetail } from '@/shared/api/errors'
+export { HTTP_STATUS } from '@/shared/api/httpStatus'

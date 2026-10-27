@@ -9,6 +9,10 @@ export default defineConfig([
   },
   {
     // TODO: back to 'error' once pages/features consume the slices (STEPS.md step 6).
-    rules: { 'fsd/insignificant-slice': 'warn' },
+    rules: {
+      'fsd/insignificant-slice': 'warn',
+      // The project uses the @/ alias everywhere, including inside a slice.
+      'fsd/import-locality': 'off',
+    },
   },
 ])

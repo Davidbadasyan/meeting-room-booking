@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { generateTimeOptions, minutesToTime, TIME_PATTERN, timeToMinutes } from './time'
+import {
+  generateTimeOptions,
+  minutesToTime,
+  TIME_PATTERN,
+  timeToMinutes,
+} from '@/shared/lib/time/time'
 
 describe('timeToMinutes / minutesToTime', () => {
   it('converts both ways', () => {

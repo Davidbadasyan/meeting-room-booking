@@ -3,8 +3,8 @@ import { setupServer } from 'msw/node'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Booking } from '@/entities/booking'
 import type { ApiErrorBody } from '@/shared/api'
-import { createHandlers } from './handlers'
-import { createBookingStore, type BookingStore } from './store'
+import { createHandlers } from '@/mocks/handlers'
+import { createBookingStore, type BookingStore } from '@/mocks/store'
 
 // Local time: 2026-10-27 12:00
 const NOW = new Date(2026, 9, 27, 12, 0)

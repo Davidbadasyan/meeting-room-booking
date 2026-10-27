@@ -4,15 +4,21 @@ export type {
   BookingError,
   BookingErrorCode,
   BookingField,
-} from './model/booking'
+} from '@/entities/booking/model/booking'
 export {
   createBookingError,
   hasStarted,
   isOverlapping,
   validateBooking,
   type MinuteRange,
-} from './model/rules'
-export { MAX_DURATION, MIN_DURATION, SLOT_STEP, WORK_END, WORK_START } from './config/workingHours'
+} from '@/entities/booking/model/rules'
+export {
+  MAX_DURATION,
+  MIN_DURATION,
+  SLOT_STEP,
+  WORK_END,
+  WORK_START,
+} from '@/entities/booking/config/workingHours'
 export {
   BOOKINGS_ENDPOINT,
   bookingDraftDtoSchema,
@@ -21,4 +27,4 @@ export {
   isoDateSchema,
   type BookingDraftDto,
   type BookingDto,
-} from './api/dto'
+} from '@/entities/booking/api/dto'
