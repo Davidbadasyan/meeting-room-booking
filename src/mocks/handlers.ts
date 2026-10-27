@@ -19,19 +19,23 @@ import {
   type ApiErrorCode,
   type ApiErrorDetail,
 } from '@/shared/api'
-import { consumeConflictSimulation, hasSimulateConflictFlag } from '@/mocks/conflictSimulation'
+import {
+  consumeConflict,
+  consumeListFailure,
+  NORMAL_LATENCY,
+  type Latency,
+} from '@/mocks/demoScenarios'
 import type { BookingStore } from '@/mocks/store'
 
-const MIN_LATENCY_MS = 300
-const MAX_LATENCY_MS = 800
 const OTHER_USER_TITLE = 'Booked by someone else'
 
 export interface HandlerOptions {
   store: BookingStore
   now?: () => Date
   /** Response delay range in ms, so loading states are visible. */
-  latency?: [min: number, max: number]
-  shouldSimulateConflict?: (request: Request) => boolean
+  latency?: Latency
+  shouldSimulateConflict?: () => boolean
+  shouldSimulateListFailure?: () => boolean
 }
 
 type ErrorResponse = HttpResponse<ApiErrorBody>
@@ -87,9 +91,8 @@ function ruleErrorResponse(errors: BookingError[]): ErrorResponse {
   )
 }
 
-function shouldSimulateConflictByDefault(request: Request): boolean {
-  if (hasSimulateConflictFlag(new URL(request.url).search)) return true
-  return consumeConflictSimulation()
+function simulatedServerErrorResponse(): ErrorResponse {
+  return errorResponse(HTTP_STATUS.internalServerError, 'SERVER_ERROR', 'Simulated server error.')
 }
 
 function randomBetween(min: number, max: number): number {
@@ -99,8 +102,9 @@ function randomBetween(min: number, max: number): number {
 export function createHandlers({
   store,
   now = () => new Date(),
-  latency = [MIN_LATENCY_MS, MAX_LATENCY_MS],
-  shouldSimulateConflict = shouldSimulateConflictByDefault,
+  latency = NORMAL_LATENCY,
+  shouldSimulateConflict = consumeConflict,
+  shouldSimulateListFailure = consumeListFailure,
 }: HandlerOptions) {
   const bookingsUrl = `*${BOOKINGS_ENDPOINT}`
   const bookingUrl = `${bookingsUrl}/:id`
@@ -114,14 +118,10 @@ export function createHandlers({
   }
 
   /** Demo: someone else books the same slot just before this request is handled. */
-  function insertCompetingBookingIfSimulated(
-    request: Request,
-    draft: BookingDraft,
-    editingId?: string,
-  ) {
+  function insertCompetingBookingIfSimulated(draft: BookingDraft, editingId?: string) {
     const isValid = findErrors(draft, editingId).length === 0
     if (!isValid) return
-    if (!shouldSimulateConflict(request)) return
+    if (!shouldSimulateConflict()) return
     store.insert({ ...draft, title: OTHER_USER_TITLE })
   }
 
@@ -130,6 +130,8 @@ export function createHandlers({
       bookingsUrl,
       async ({ request }) => {
         await wait()
+        if (shouldSimulateListFailure()) return simulatedServerErrorResponse()
+
         const date = isoDateSchema.safeParse(new URL(request.url).searchParams.get('date'))
         if (!date.success) return invalidFormatResponse(date.error)
 
@@ -145,7 +147,7 @@ export function createHandlers({
         if (!body.success) return invalidFormatResponse(body.error)
 
         const draft = body.data
-        insertCompetingBookingIfSimulated(request, draft)
+        insertCompetingBookingIfSimulated(draft)
         const errors = findErrors(draft)
         if (errors.length > 0) return ruleErrorResponse(errors)
 
@@ -165,7 +167,7 @@ export function createHandlers({
         if (!body.success) return invalidFormatResponse(body.error)
 
         const updated = { ...booking, ...body.data }
-        insertCompetingBookingIfSimulated(request, updated, booking.id)
+        insertCompetingBookingIfSimulated(updated, booking.id)
         const errors = findErrors(updated, booking.id)
         if (errors.length > 0) return ruleErrorResponse(errors)
 

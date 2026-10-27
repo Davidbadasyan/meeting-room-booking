@@ -19,8 +19,14 @@ npm test
 - Starting in the current minute counts as not past (12:00 is bookable at 12:00:30).
 - Bookings are half-open intervals, so 10:00–11:00 and 11:00–12:00 do not overlap.
 
-## Conflict demo
+## Demo switches
 
-Open the app with `?simulateConflict=1`. The next create or edit makes the mock server insert a
-"Booked by someone else" booking into the same slot first, so the request fails with `409`.
-It fires once per page load; reload with the flag to repeat it.
+Add these to the page URL (they can be combined, e.g. `?slow=1&simulateConflict=1`):
+
+| Flag | Effect |
+|---|---|
+| `?simulateConflict=1` | The next valid create or edit: the mock server first saves a "Booked by someone else" booking in that slot, so the request fails with `409`. |
+| `?simulateError=1` | The next two list requests fail with `500` (the first try and the one automatic retry), so the error state shows and **Retry** then works. |
+| `?slow=1` | Every response takes 2-4 s, so loading and submitting states are easy to see. |
+
+Each switch fires once per page load; reload to repeat it.

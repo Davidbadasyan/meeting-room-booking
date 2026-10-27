@@ -9,7 +9,7 @@ const apiErrorDetailSchema = z.object({
 
 export const apiErrorBodySchema = z.object({
   error: z.object({
-    code: z.enum(['VALIDATION_ERROR', 'CONFLICT', 'NOT_FOUND']),
+    code: z.enum(['VALIDATION_ERROR', 'CONFLICT', 'NOT_FOUND', 'SERVER_ERROR']),
     message: z.string(),
     details: z.array(apiErrorDetailSchema).optional(),
   }),

@@ -46,6 +46,7 @@ describe('against the mock server', () => {
       now: () => NOW,
       latency: [0, 0],
       shouldSimulateConflict: () => false,
+      shouldSimulateListFailure: () => false,
     })
     server.resetHandlers(...handlers)
   })

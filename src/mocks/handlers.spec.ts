@@ -20,6 +20,7 @@ const SEED: Booking[] = [
 
 let store: BookingStore
 let isConflictSimulated = false
+let isListFailureSimulated = false
 
 const server = setupServer()
 
@@ -28,12 +29,14 @@ afterAll(() => server.close())
 beforeEach(() => {
   store = createBookingStore(SEED)
   isConflictSimulated = false
+  isListFailureSimulated = false
   server.resetHandlers(
     ...createHandlers({
       store,
       now: () => NOW,
       latency: [0, 0],
       shouldSimulateConflict: () => isConflictSimulated,
+      shouldSimulateListFailure: () => isListFailureSimulated,
     }),
   )
 })
@@ -213,5 +216,14 @@ describe('conflict simulation', () => {
     const response = await send('POST', '', { date: TOMORROW, start: '16:00', end: '16:10' })
     expect(response.status).toBe(400)
     expect(store.byDate(TOMORROW)).toHaveLength(2)
+  })
+})
+
+describe('server error simulation', () => {
+  it('fails the list request with 500', async () => {
+    isListFailureSimulated = true
+    const response = await fetch(`${BASE_URL}?date=${TOMORROW}`)
+    expect(response.status).toBe(500)
+    expect((await readError(response)).code).toBe('SERVER_ERROR')
   })
 })
