@@ -9,7 +9,8 @@ export default defineConfig([
   },
   {
     rules: {
-      // TODO(step 6): back to 'error' once pages use the features (warn while there is no UI).
+      // Every slice is used, but a one-page app gives each feature/widget a single reference,
+      // which this rule also reports ("consider merging"). The architecture keeps them apart.
       'fsd/insignificant-slice': 'warn',
       // The project uses the @/ alias everywhere, including inside a slice.
       'fsd/import-locality': 'off',
