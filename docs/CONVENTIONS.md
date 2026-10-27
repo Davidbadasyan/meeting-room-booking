@@ -41,17 +41,49 @@ src/
 - Clean up side effects in `onScopeDispose`.
 - Pass `now` into pure rules as a parameter. Never call `new Date()` inside rules.
 
-## 4. Vue component conventions (official style guide)
+## 4. Vue component conventions (official style guide, Vue 3.5)
 
+- Vue 3.5 stable only (no 3.6 RC / Vapor mode). `package.json` pins `vue` to `~3.5`.
 - One component per file, PascalCase filenames, multi-word names.
 - `Base` prefix for generic `shared/ui` components.
 - Prefix tightly coupled children with the parent's name (`BookingTimelineSlot`).
-- `defineProps<{...}>()` / `defineEmits<{...}>()` with TS generics; `defineModel()` for `v-model`.
-- Prefer `computed` over `watch`. Use `watch` only for real side effects.
 - `provide/inject` with a typed `InjectionKey`, never string keys.
 - Components stay presentational: no business logic in templates.
 - Never `v-if` and `v-for` on the same element.
-- Scoped styles everywhere except `App.vue`.
+- Scoped styles everywhere except `App.vue` (Tailwind utilities need no `<style>` block).
+
+**Reactivity**
+- `computed` only for read-only derived values. No writable computed (`get`/`set`).
+- Prefer `computed` over `watch`. Use `watch` only for real side effects.
+
+**Props, emits, models**
+- Props use reactive destructure with JS defaults:
+  `const { booking, isPast = false } = defineProps<{ booking: Booking; isPast?: boolean }>()`.
+  No `withDefaults`, no `const props = ...` / `props.x`. Destructure what `<script>` uses;
+  the template can use props directly.
+- Pass a destructured prop to `watch()` or a composable as a getter: `watch(() => date, ...)`,
+  `useBookingsQuery(() => date)`.
+- Emits use the named tuple syntax: `defineEmits<{ edit: [id: string]; close: [] }>()`.
+- Two-way binding with `defineModel()`. Plain `v-model` by default; the expanded
+  `:model-value` + `@update:model-value` only when the parent must intercept the value.
+  Input components stay dumb; validation lives in the composable that owns the state.
+
+**Templates**
+- Bindings are always written out: `:booking="booking"`, `:return-focus="returnFocus"`.
+  Never the same-name shorthand (`:booking`, `:return-focus`). The value is the script
+  variable in camelCase. Enforced by ESLint `vue/v-bind-style` (`sameNameShorthand: 'never'`).
+- `useId()` for every label/input pair and every `aria-describedby`; no hand-written ids.
+- `useTemplateRef()` for DOM refs (e.g. focus return), never `ref(null)`.
+- `v-bind`: `:attr` bindings are always fine. Object spread `v-bind="obj"` only in
+  `shared/ui/primitives`. `v-bind="$attrs"` only together with `defineOptions({ inheritAttrs: false })`,
+  and only when the root element is not where attributes belong; otherwise rely on fallthrough.
+
+**Component options and typing**
+- `defineSlots()` for typed slots in every component that has slots.
+- `defineOptions()` for component options (e.g. `inheritAttrs: false`), never a second `<script>`.
+- Generic components (`<script setup lang="ts" generic="T">`) where a Base component works
+  with typed options (e.g. `BaseSelect`).
+- Generated files in `src/shared/ui/primitives` are exempt; they are never edited by hand.
 
 ## 5. Code style: extremely clean and simple
 

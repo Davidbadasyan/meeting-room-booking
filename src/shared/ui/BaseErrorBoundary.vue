@@ -4,6 +4,8 @@ import BaseButton from '@/shared/ui/BaseButton.vue'
 
 defineProps<{ title: string }>()
 
+defineSlots<{ default(): unknown }>()
+
 const hasError = ref(false)
 
 // Catches render and lifecycle errors from children. Returning false stops them reaching

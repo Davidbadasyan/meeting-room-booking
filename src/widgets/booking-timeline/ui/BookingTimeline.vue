@@ -9,7 +9,7 @@ import { useTimelineSlots } from '@/widgets/booking-timeline/model/useTimelineSl
 import BookingTimelineBooking from '@/widgets/booking-timeline/ui/BookingTimelineBooking.vue'
 import BookingTimelineSlot from '@/widgets/booking-timeline/ui/BookingTimelineSlot.vue'
 
-const props = defineProps<{
+const { date } = defineProps<{
   date: IsoDate
   canCreate: boolean
 }>()
@@ -22,9 +22,9 @@ const emit = defineEmits<{
 
 const headingId = useId()
 // No placeholder data: while a new date loads, the old date's bookings are not shown.
-const { data, isPending, isError, isFetching, error, refetch } = useBookingsQuery(() => props.date)
+const { data, isPending, isError, isFetching, error, refetch } = useBookingsQuery(() => date)
 const bookings = computed(() => data.value ?? [])
-const { segments } = useTimelineSlots(() => props.date, bookings)
+const { segments } = useTimelineSlots(() => date, bookings)
 
 const isEmpty = computed(() => bookings.value.length === 0)
 const hasSegments = computed(() => segments.value.length > 0)

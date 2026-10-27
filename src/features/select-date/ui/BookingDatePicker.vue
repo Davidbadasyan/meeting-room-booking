@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, useId } from 'vue'
+import { useId } from 'vue'
 import type { IsoDate } from '@/shared/lib/time'
 import { BaseButton, BaseInput } from '@/shared/ui'
 
-const props = defineProps<{
+defineProps<{
   date: IsoDate
   isPast: boolean
 }>()
@@ -17,14 +17,11 @@ const emit = defineEmits<{
 
 const inputId = useId()
 
-// The native date input sends '' when cleared; keep the current day instead.
-const pickerValue = computed({
-  get: () => props.date,
-  set: (value: string) => {
-    if (value === '') return
-    emit('select', value)
-  },
-})
+/** The native date input sends '' when cleared; keep the current day instead. */
+function selectPickedDate(value: string) {
+  if (value === '') return
+  emit('select', value)
+}
 </script>
 
 <template>
@@ -32,7 +29,13 @@ const pickerValue = computed({
     <div class="flex flex-wrap items-end gap-2">
       <div class="flex flex-col gap-1">
         <label :for="inputId" class="text-sm font-medium">Date</label>
-        <BaseInput :id="inputId" v-model="pickerValue" type="date" class="w-auto" />
+        <BaseInput
+          :id="inputId"
+          :model-value="date"
+          type="date"
+          class="w-auto"
+          @update:model-value="selectPickedDate"
+        />
       </div>
       <div role="group" aria-label="Change day" class="flex flex-wrap gap-2">
         <BaseButton variant="outline" @click="emit('previous')">Previous day</BaseButton>

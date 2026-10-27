@@ -9,6 +9,11 @@ const { booking, isMuted = false } = defineProps<{
   isMuted?: boolean
 }>()
 
+defineSlots<{
+  status?(): unknown
+  actions?(): unknown
+}>()
+
 const timeRange = computed(() => formatTimeRange(booking))
 const title = computed(() => displayTitle(booking))
 const isUntitled = computed(() => booking.title === undefined)

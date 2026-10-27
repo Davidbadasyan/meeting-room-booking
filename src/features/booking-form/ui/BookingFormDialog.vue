@@ -7,7 +7,7 @@ import { useTimeOptions } from '@/features/booking-form/model/useTimeOptions'
 import { formatLongDate, type IsoDate, type Time } from '@/shared/lib/time'
 import { BaseButton, BaseDialog, BaseInput, BaseSelect, toast } from '@/shared/ui'
 
-const props = defineProps<{
+const { date, booking, initialStart, returnFocus } = defineProps<{
   date: IsoDate
   /** The booking to edit; leave empty to create. */
   booking?: Booking
@@ -31,11 +31,11 @@ const {
   submit,
   submitAsNew,
 } = useBookingForm({
-  date: () => props.date,
-  booking: () => props.booking,
-  initialStart: () => props.initialStart,
+  date: () => date,
+  booking: () => booking,
+  initialStart: () => initialStart,
 })
-const { startOptions, endOptions } = useTimeOptions({ date: () => props.date, start, end })
+const { startOptions, endOptions } = useTimeOptions({ date: () => date, start, end })
 
 const ids = {
   form: useId(),
@@ -56,7 +56,7 @@ const submitLabel = computed(() => {
   if (isEditing.value) return 'Save changes'
   return 'Create booking'
 })
-const description = computed(() => formatLongDate(props.date))
+const description = computed(() => formatLongDate(date))
 const endPlaceholder = computed(() => {
   if (start.value === '') return 'Choose a start time first'
   return 'End time'

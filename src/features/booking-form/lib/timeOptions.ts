@@ -22,7 +22,7 @@ export function formatDuration(totalMinutes: number): string {
 }
 
 /** 09:00 to 17:30 on the slot grid; for today, times that have passed are disabled. */
-export function startTimeOptions(date: IsoDate, now: Date): SelectOption[] {
+export function startTimeOptions(date: IsoDate, now: Date): SelectOption<Time>[] {
   return generateTimeOptions(WORK_START, latestStart, SLOT_STEP).map((time) => ({
     value: time,
     label: time,
@@ -31,7 +31,7 @@ export function startTimeOptions(date: IsoDate, now: Date): SelectOption[] {
 }
 
 /** From start + 30 min to start + 2 h, never past 18:00. Empty until a start is chosen. */
-export function endTimeOptions(start: Time | ''): SelectOption[] {
+export function endTimeOptions(start: Time | ''): SelectOption<Time>[] {
   if (start === '') return []
 
   const startMinutes = timeToMinutes(start)

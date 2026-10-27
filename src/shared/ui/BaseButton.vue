@@ -18,11 +18,13 @@ const {
   isDisabled?: boolean
 }>()
 
+defineSlots<{ default(): unknown }>()
+
 const isBlocked = computed(() => isLoading || isDisabled)
 </script>
 
 <template>
-  <Button :variant :size :type :disabled="isBlocked" :aria-busy="isLoading">
+  <Button :variant="variant" :size="size" :type="type" :disabled="isBlocked" :aria-busy="isLoading">
     <BaseSpinner v-if="isLoading" />
     <slot />
   </Button>

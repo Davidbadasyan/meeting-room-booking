@@ -17,6 +17,11 @@ const { returnFocus } = defineProps<{
 
 const isOpen = defineModel<boolean>('open', { required: true })
 
+defineSlots<{
+  default(): unknown
+  footer(): unknown
+}>()
+
 function onCloseAutoFocus(event: Event) {
   const target = returnFocus?.()
   if (target === undefined) return

@@ -1,18 +1,14 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="Value extends string">
 import { NativeSelect, NativeSelectOption } from '@/shared/ui/primitives/native-select'
-
-export interface SelectOption {
-  value: string
-  label: string
-  isDisabled?: boolean
-}
+import type { SelectOption } from '@/shared/ui/selectOption'
 
 defineProps<{
-  options: SelectOption[]
+  options: SelectOption<Value>[]
   placeholder: string
 }>()
 
-const model = defineModel<string>({ required: true })
+/** '' while nothing is chosen, which shows the placeholder. */
+const model = defineModel<Value | ''>({ required: true })
 </script>
 
 <!-- A native <select>: keyboard, screen readers and mobile pickers work out of the box. -->

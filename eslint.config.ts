@@ -30,6 +30,8 @@ export default defineConfigWithVueTs(
     name: 'app/alias-imports',
     files: ['src/**/*.{vue,ts}'],
     rules: {
+      // Bindings are always written out: :booking="booking", never :booking.
+      'vue/v-bind-style': ['error', 'shorthand', { sameNameShorthand: 'never' }],
       'no-restricted-imports': [
         'error',
         {
@@ -48,6 +50,7 @@ export default defineConfigWithVueTs(
     rules: {
       'no-restricted-imports': 'off',
       'vue/multi-word-component-names': 'off',
+      'vue/v-bind-style': 'off',
     },
   },
 

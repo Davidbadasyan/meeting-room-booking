@@ -3,6 +3,8 @@ defineProps<{
   title: string
   description?: string
 }>()
+
+defineSlots<{ action?(): unknown }>()
 </script>
 
 <template>

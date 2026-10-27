@@ -23,6 +23,8 @@ const emit = defineEmits<{ confirm: [] }>()
 
 const isOpen = defineModel<boolean>('open', { required: true })
 
+defineSlots<{ default?(): unknown }>()
+
 function onCloseAutoFocus(event: Event) {
   const target = returnFocus?.()
   if (target === undefined) return
