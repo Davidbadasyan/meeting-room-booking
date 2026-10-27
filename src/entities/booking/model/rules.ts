@@ -1,6 +1,6 @@
-import { MAX_DURATION, MIN_DURATION, WORK_END, WORK_START } from './constants'
-import { isPastDate, isPastTime, isValidDate, isValidTime, timeToMinutes } from './time'
-import type { Booking, BookingDraft, BookingError } from './types'
+import { isPastDate, isPastTime, isValidDate, isValidTime, timeToMinutes } from '@/shared/lib/time'
+import { MAX_DURATION, MIN_DURATION, WORK_END, WORK_START } from '../config/workingHours'
+import type { Booking, BookingDraft, BookingError } from './booking'
 
 /** Half-open intervals: touching boundaries (10:00–11:00 and 11:00–12:00) do not overlap. */
 export function overlaps(a: Pick<Booking, 'start' | 'end'>, b: Pick<Booking, 'start' | 'end'>) {

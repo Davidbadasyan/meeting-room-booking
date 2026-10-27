@@ -1,4 +1,4 @@
-import type { Time } from './types'
+import type { Time } from '@/shared/lib/time'
 
 export const WORK_START: Time = '09:00'
 export const WORK_END: Time = '18:00'

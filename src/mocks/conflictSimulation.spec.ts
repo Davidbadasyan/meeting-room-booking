@@ -3,7 +3,7 @@ import {
   armConflictSimulation,
   consumeConflictSimulation,
   hasSimulateConflictFlag,
-} from '../conflictSimulation'
+} from './conflictSimulation'
 
 describe('conflictSimulation', () => {
   it('fires once per arming', () => {

@@ -1,10 +1,10 @@
 // @vitest-environment node
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import type { ApiErrorBody } from '@/api/contract'
-import type { Booking } from '@/domain'
-import { createHandlers } from '../handlers'
-import { createBookingStore, type BookingStore } from '../store'
+import type { ApiErrorBody } from '@/shared/api'
+import type { Booking, BookingError } from '@/entities/booking'
+import { createHandlers } from './handlers'
+import { createBookingStore, type BookingStore } from './store'
 
 // Local time: 2026-10-27 12:00
 const NOW = new Date(2026, 9, 27, 12, 0)
@@ -46,7 +46,7 @@ const send = (method: string, path = '', body?: unknown) =>
     body: body === undefined ? undefined : JSON.stringify(body),
   })
 
-const errorOf = async (res: Response) => ((await res.json()) as ApiErrorBody).error
+const errorOf = async (res: Response) => ((await res.json()) as ApiErrorBody<BookingError>).error
 
 describe('GET /api/bookings', () => {
   it('returns bookings for the date, sorted by start', async () => {

@@ -1,8 +1,4 @@
-/** Calendar date in the user's local timezone, `YYYY-MM-DD`. */
-export type IsoDate = string
-
-/** Wall-clock time, `HH:mm` (24h). */
-export type Time = string
+import type { IsoDate, Time } from '@/shared/lib/time'
 
 export interface Booking {
   id: string

@@ -1,5 +1,6 @@
 import { addDays } from 'date-fns'
-import { toIsoDate, type Booking, type BookingDraft } from '@/domain'
+import type { Booking, BookingDraft } from '@/entities/booking'
+import { toIsoDate } from '@/shared/lib/time'
 
 export interface BookingStore {
   all(): Booking[]

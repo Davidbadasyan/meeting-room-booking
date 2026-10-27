@@ -1,13 +1,14 @@
 import { delay, http, HttpResponse, type DefaultBodyType, type PathParams } from 'msw'
-import { BOOKINGS_PATH, type ApiErrorBody, type ApiErrorCode } from '@/api/contract'
 import {
+  BOOKINGS_ENDPOINT,
   isBookingLocked,
-  isValidDate,
   validateBooking,
   type Booking,
   type BookingDraft,
   type BookingError,
-} from '@/domain'
+} from '@/entities/booking'
+import type { ApiErrorBody, ApiErrorCode } from '@/shared/api'
+import { isValidDate } from '@/shared/lib/time'
 import { consumeConflictSimulation, hasSimulateConflictFlag } from './conflictSimulation'
 import type { BookingStore } from './store'
 
@@ -57,7 +58,7 @@ export function createHandlers({
   latency = [300, 800],
   shouldSimulateConflict = defaultShouldSimulateConflict,
 }: HandlerOptions) {
-  const url = `*${BOOKINGS_PATH}`
+  const url = `*${BOOKINGS_ENDPOINT}`
 
   const wait = () => {
     const [min, max] = latency
