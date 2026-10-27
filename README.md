@@ -8,7 +8,7 @@ Design.
 
 - **Live demo:** https://meeting-room-booking-jade.vercel.app
 - **Repository:** https://github.com/Davidbadasyan/meeting-room-booking
-- **Docs:** [Task](docs/TASK.md) · [Implementation steps](docs/STEPS.md) · [Conventions](docs/CONVENTIONS.md)
+- **Docs:** [Task](docs/TASK.md) · [Implementation steps](docs/STEPS.md) · [Conventions](docs/CONVENTIONS.md) · [How I worked with AI](docs/AI-WORKFLOW.md)
 
 ## For reviewers: 2-minute tour
 
@@ -155,10 +155,10 @@ Questions sent to the team on 2026-10-27; these are the working assumptions unti
 ## Accessibility and testing evidence
 
 <details>
-<summary>axe on 4 states, contrast numbers, keyboard and focus, 198 tests</summary>
+<summary>axe on 4 states, contrast numbers, keyboard and focus, 204 tests</summary>
 
 **Automated**
-- 198 tests in 26 files (Vitest): business rules, time helpers, mock server handlers, the HTTP
+- 204 tests in 26 files (Vitest): business rules, time helpers, mock server handlers, the HTTP
   client and error mapping, composables against the real handlers, components, and the full page.
 - `npm run test:tz` runs the date and rule tests in UTC+4 and UTC−7/−8, including 01:30 and 23:30
   local time; a guard test fails if the run is ever in UTC, where a `toISOString` bug would pass.
@@ -197,6 +197,12 @@ Questions sent to the team on 2026-10-27; these are the working assumptions unti
 - **No end-to-end tests:** next would be a few Playwright flows (create, conflict, delete) against
   the preview build.
 - **No i18n:** English only; dates use a fixed English format.
+- **One shared clock:** each component reads its own 30-second clock, so the timeline and the form
+  can disagree for up to 30 s about whether a slot has passed; the server re-checks on submit.
+  A single app-wide clock would keep them in step.
+- **zod 3 advisory:** `npm audit` reports a memory-exhaustion issue in zod < 4.6.6 when validating
+  very large collections. Here zod only validates data from our own API and `localStorage`; the
+  fix is the zod 4 upgrade, which waits on `@vee-validate/zod` supporting zod 4.
 - One room, no authentication (out of scope per TASK.md).
 
 ## Deployment (Vercel)
@@ -221,7 +227,8 @@ About 1 h 45 min including planning (09:09–10:55), with AI assistance.
 
 ## AI-assisted workflow
 
-I used AI as a pair programmer, with me owning the decisions and the review.
+I used AI as a pair programmer, with me owning the decisions and the review. The full write-up,
+with links to the commits and transcript sections, is in [docs/AI-WORKFLOW.md](docs/AI-WORKFLOW.md).
 
 - **Tools:** Claude (chat) for planning, architecture and code review;
   Claude Code (terminal) for implementation, tests and browser checks.
@@ -242,4 +249,6 @@ I used AI as a pair programmer, with me owning the decisions and the review.
 - **Boundaries:** the AI never deployed, pushed or signed in to any service, and only
   installed tooling from npm and nodejs.org; deploying and pushing were done by me.
 
-Transcripts (complete, unedited): [Claude chat](…) · [Claude Code session](…)
+Transcripts: [Claude chat](…) (planning and review) · [Claude Code session](https://gist.github.com/Davidbadasyan/54c476981ce3ee7660e7e5697400205f)
+(implementation, structured by phase; lightly edited: off-topic messages removed and my short
+messages copy-edited for spelling, as described in its header).
