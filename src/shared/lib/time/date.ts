@@ -1,4 +1,4 @@
-import { format, isValid, parse } from 'date-fns'
+import { addDays, format, isValid, parse } from 'date-fns'
 import { MINUTES_PER_HOUR, timeToMinutes, type Time } from '@/shared/lib/time/time'
 
 /** Calendar date in the user's local timezone, `YYYY-MM-DD`. */
@@ -18,6 +18,20 @@ export function isRealDate(value: string): boolean {
 
 export function toIsoDate(now: Date): IsoDate {
   return format(now, ISO_DATE_FORMAT)
+}
+
+function toLocalDate(date: IsoDate): Date {
+  return parse(date, ISO_DATE_FORMAT, new Date(0))
+}
+
+/** Calendar arithmetic in local time, so it is right across DST changes too. */
+export function addDaysToIsoDate(date: IsoDate, days: number): IsoDate {
+  return toIsoDate(addDays(toLocalDate(date), days))
+}
+
+/** For headings and dialog descriptions, e.g. "Tuesday, 27 October 2026". */
+export function formatLongDate(date: IsoDate): string {
+  return format(toLocalDate(date), 'EEEE, d MMMM yyyy')
 }
 
 export function nowInMinutes(now: Date): number {

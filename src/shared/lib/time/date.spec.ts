@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { isPastDate, isPastTime, isRealDate, toIsoDate } from '@/shared/lib/time/date'
+import {
+  addDaysToIsoDate,
+  formatLongDate,
+  isPastDate,
+  isPastTime,
+  isRealDate,
+  toIsoDate,
+} from '@/shared/lib/time/date'
 
 // Local time: 2026-10-27 12:00
 const NOW = new Date(2026, 9, 27, 12, 0)
@@ -76,5 +83,24 @@ describe('local dates near midnight (tests run outside UTC, see vitest.config.ts
 
   it('parses a date string as a local date', () => {
     expect(isRealDate(LOCAL_DAY)).toBe(true)
+  })
+})
+
+describe('addDaysToIsoDate', () => {
+  it('moves across month and year boundaries', () => {
+    expect(addDaysToIsoDate('2026-10-31', 1)).toBe('2026-11-01')
+    expect(addDaysToIsoDate('2027-01-01', -1)).toBe('2026-12-31')
+  })
+
+  it('moves exactly one calendar day across a DST change', () => {
+    // Clocks change on 2026-11-01 in America/Los_Angeles and 2026-10-25 in Europe.
+    expect(addDaysToIsoDate('2026-10-31', 2)).toBe('2026-11-02')
+    expect(addDaysToIsoDate('2026-10-25', -1)).toBe('2026-10-24')
+  })
+})
+
+describe('formatLongDate', () => {
+  it('spells out the weekday and month', () => {
+    expect(formatLongDate('2026-10-27')).toBe('Tuesday, 27 October 2026')
   })
 })

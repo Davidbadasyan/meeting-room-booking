@@ -21,10 +21,13 @@ let unmount = () => {}
 afterEach(() => unmount())
 
 function mountDelete() {
-  const mounted = mountComposable(() => {
-    useBookingsQuery(TOMORROW)
-    return useDeleteBooking()
-  }, NOW)
+  const mounted = mountComposable(
+    () => {
+      useBookingsQuery(TOMORROW)
+      return useDeleteBooking()
+    },
+    () => NOW,
+  )
   unmount = mounted.unmount
   return mounted
 }

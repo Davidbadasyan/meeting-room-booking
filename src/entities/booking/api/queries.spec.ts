@@ -22,10 +22,13 @@ let unmount = () => {}
 afterEach(() => unmount())
 
 function mountBookings(date = ref(TOMORROW)) {
-  const mounted = mountComposable(() => {
-    const query = useBookingsQuery(date)
-    return { query, ...useRefreshBookings() }
-  }, NOW)
+  const mounted = mountComposable(
+    () => {
+      const query = useBookingsQuery(date)
+      return { query, ...useRefreshBookings() }
+    },
+    () => NOW,
+  )
   unmount = mounted.unmount
   return mounted.result
 }

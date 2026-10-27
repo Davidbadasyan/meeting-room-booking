@@ -29,7 +29,7 @@ afterEach(() => unmount())
 function mountForm(options: { date: string; booking?: Booking; clientNow?: Date }) {
   const mounted = mountComposable(
     () => useBookingForm({ date: options.date, booking: options.booking }),
-    options.clientNow ?? NOW,
+    () => options.clientNow ?? NOW,
   )
   unmount = mounted.unmount
   return mounted

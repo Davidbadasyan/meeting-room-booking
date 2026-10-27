@@ -7,6 +7,8 @@ export {
   type Time,
 } from '@/shared/lib/time/time'
 export {
+  addDaysToIsoDate,
+  formatLongDate,
   isPastDate,
   isPastTime,
   isRealDate,

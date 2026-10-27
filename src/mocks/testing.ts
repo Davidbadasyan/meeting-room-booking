@@ -6,7 +6,7 @@ import { createQueryClient } from '@/app/providers/vueQuery'
 import { BOOKINGS_API_KEY, createHttpBookingsApi, type Booking } from '@/entities/booking'
 import { createHandlers } from '@/mocks/handlers'
 import { createBookingStore, type BookingStore } from '@/mocks/store'
-import { CLOCK_KEY } from '@/shared/lib/clock'
+import { CLOCK_KEY, type Clock } from '@/shared/lib/clock'
 
 /**
  * Test-only helpers: the real HTTP client talks to the real mock handlers,
@@ -58,7 +58,7 @@ function createTestQueryClient(): QueryClient {
 }
 
 /** Runs a composable inside a mounted component with Vue Query, the API and a fixed clock. */
-export function mountComposable<Result>(useComposable: () => Result, clientNow: Date) {
+export function mountComposable<Result>(useComposable: () => Result, clock: Clock) {
   const queryClient = createTestQueryClient()
   const results: Result[] = []
   const Host = defineComponent({
@@ -73,7 +73,7 @@ export function mountComposable<Result>(useComposable: () => Result, clientNow: 
       plugins: [[VueQueryPlugin, { queryClient }]],
       provide: {
         [BOOKINGS_API_KEY]: createHttpBookingsApi(TEST_BASE_URL),
-        [CLOCK_KEY]: () => clientNow,
+        [CLOCK_KEY]: clock,
       },
     },
   })
