@@ -219,8 +219,26 @@ includes `public/mockServiceWorker.js`, which MSW needs in production.
 
 About 1 h 45 min including planning (09:09–10:55), with AI assistance.
 
-## AI usage
+## AI-assisted workflow
 
-- **Claude** (chat): planning the steps, reviewing the work, writing the conventions.
-- **Claude Code**: implementation, tests, browser checks with Chrome, and this README.
-- Transcripts: _to be added_ (Claude chat) · _to be added_ (Claude Code session).
+I used AI as a pair programmer, with me owning the decisions and the review.
+
+- **Tools:** Claude (chat) for planning, architecture and code review;
+  Claude Code (terminal) for implementation, tests and browser checks.
+- **Plan first:** translated the brief, wrote a step-by-step plan
+  ([docs/STEPS.md](docs/STEPS.md)) and chose the stack before any code was written.
+- **Standards defined up front:** architecture (Feature-Sliced Design), code style
+  (simple, no clever patterns), `@/` imports, TypeScript and Vue 3.5 rules, all written
+  into [docs/CONVENTIONS.md](docs/CONVENTIONS.md), which the implementation follows.
+- **Small, reviewable steps:** each step ran as a separate prompt, ended with a report,
+  and was reviewed before the next one. See the commit history.
+- **Challenging the output:** I questioned and changed AI choices where they didn't fit,
+  e.g. replacing writable `computed` with `defineModel`, limiting `v-bind` spreads to
+  generated UI primitives, and adopting stable Vue 3.5 APIs instead of 3.6 RC.
+- **Verification over trust:** tests were proven by deliberately breaking the code,
+  the accessibility checks were proven with planted violations, and a clean
+  `npm ci` on the pinned Node caught a lockfile problem before deploy.
+- **Boundaries:** the AI never deployed, pushed or signed in to any service;
+  those steps were done by me.
+
+Transcripts (complete, unedited): [Claude chat](…) · [Claude Code session](…)
