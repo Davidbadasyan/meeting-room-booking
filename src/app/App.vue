@@ -1,7 +1,9 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { BookingDayPage } from '@/pages/booking-day'
+import { BaseToaster } from '@/shared/ui'
+</script>
 
 <template>
-  <main>
-    <h1>Meeting Room Booking</h1>
-  </main>
+  <BookingDayPage />
+  <BaseToaster />
 </template>
