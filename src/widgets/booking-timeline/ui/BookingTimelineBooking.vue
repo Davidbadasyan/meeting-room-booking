@@ -21,7 +21,7 @@ const style = computed(() => segmentStyle(segment.durationInMinutes))
 </script>
 
 <template>
-  <li class="md:min-h-(--segment-height)" :style="style">
+  <li class="md:grid md:min-h-(--segment-height)" :style="style">
     <BookingCard :booking="segment.booking" :is-muted="hasStarted">
       <template #status>
         <p v-if="statusLabel" class="text-muted-foreground text-xs font-semibold uppercase">

@@ -15,7 +15,7 @@ const style = computed(() => segmentStyle(segment.durationInMinutes))
 </script>
 
 <template>
-  <li class="md:min-h-(--segment-height)" :style="style">
+  <li class="md:grid md:min-h-(--segment-height)" :style="style">
     <button
       v-if="isBookable"
       type="button"
