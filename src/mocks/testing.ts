@@ -1,7 +1,7 @@
 import { VueQueryPlugin, type QueryClient } from '@tanstack/vue-query'
 import { mount } from '@vue/test-utils'
 import type { SetupServer } from 'msw/node'
-import { defineComponent } from 'vue'
+import { defineComponent, type Component } from 'vue'
 import { createQueryClient } from '@/app/providers/vueQuery'
 import { BOOKINGS_API_KEY, createHttpBookingsApi, type Booking } from '@/entities/booking'
 import { createHandlers } from '@/mocks/handlers'
@@ -57,18 +57,17 @@ function createTestQueryClient(): QueryClient {
   return queryClient
 }
 
-/** Runs a composable inside a mounted component with Vue Query, the API and a fixed clock. */
-export function mountComposable<Result>(useComposable: () => Result, clock: Clock) {
-  const queryClient = createTestQueryClient()
-  const results: Result[] = []
-  const Host = defineComponent({
-    setup() {
-      results.push(useComposable())
-      return () => null
-    },
-  })
+interface MountOptions {
+  clock: Clock
+  props?: Record<string, unknown>
+}
 
-  const wrapper = mount(Host, {
+/** Mounts a component with Vue Query, the HTTP BookingsApi and a fixed clock, attached to the page. */
+export function mountWithProviders(component: Component, { clock, props }: MountOptions) {
+  const queryClient = createTestQueryClient()
+  const wrapper = mount(component, {
+    props,
+    attachTo: document.body,
     global: {
       plugins: [[VueQueryPlugin, { queryClient }]],
       provide: {
@@ -77,6 +76,19 @@ export function mountComposable<Result>(useComposable: () => Result, clock: Cloc
       },
     },
   })
+  return { wrapper, queryClient }
+}
+
+/** Runs a composable inside a mounted component with Vue Query, the API and a fixed clock. */
+export function mountComposable<Result>(useComposable: () => Result, clock: Clock) {
+  const results: Result[] = []
+  const Host = defineComponent({
+    setup() {
+      results.push(useComposable())
+      return () => null
+    },
+  })
+  const { wrapper, queryClient } = mountWithProviders(Host, { clock })
 
   const [result] = results
   if (result === undefined) throw new Error('The composable did not return anything.')

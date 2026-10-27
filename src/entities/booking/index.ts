@@ -38,3 +38,5 @@ export {
   useBookingsQuery,
   useRefreshBookings,
 } from '@/entities/booking/api/queries'
+export { describeBooking, displayTitle, formatTimeRange } from '@/entities/booking/lib/format'
+export { default as BookingCard } from '@/entities/booking/ui/BookingCard.vue'
