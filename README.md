@@ -8,6 +8,22 @@ Design.
 
 - **Live demo:** _to be added_
 - **Repository:** _to be added_
+- **Docs:** [Task](docs/TASK.md) · [Implementation steps](docs/STEPS.md) · [Conventions](docs/CONVENTIONS.md)
+
+## For reviewers: 2-minute tour
+
+1. **Server conflict (rule 8):** open the live demo with `?simulateConflict=1`, click a free
+   slot, choose an end time and press **Create booking**. The banner appears, the list refreshes
+   with the booking that took the slot, and your input stays.
+2. **A real conflict with two tabs:** open the same day in two tabs, start a booking for a free
+   slot in tab A, book that slot in tab B, then submit in tab A: `409` without any flag.
+3. **The rules:** [`src/entities/booking/model/rules.ts`](src/entities/booking/model/rules.ts),
+   one pure `validateBooking` used by the form and the mock server.
+4. **The API swap point:** [`src/entities/booking/api/`](src/entities/booking/api/):
+   `bookingsApi.ts` is the interface the UI depends on; `httpBookingsApi.ts` is the one file to
+   replace for a different backend. `VITE_API_MODE=http` turns the mock off.
+
+![Conflict demo: a slot is taken while the form is open; the banner appears, the list refreshes and the input is kept](docs/media/conflict_demo.gif)
 
 ## Quick start
 
@@ -24,7 +40,7 @@ npm run build      # type-check + production build into dist/
 
 Other scripts: `npm run lint` (oxlint + ESLint + Steiger), `npm run type-check`, `npm run preview`.
 
-## Features
+## What's done
 
 | TASK.md: the user can… | How |
 |---|---|
@@ -105,6 +121,9 @@ mocks      outside the layers, dev/demo only: MSW handlers, store, demo switches
 
 ## Key decisions
 
+<details>
+<summary>Decision — why (11 decisions)</summary>
+
 | Decision | Why |
 |---|---|
 | Vue 3.5 (pinned `~3.5`), not 3.6 | 3.6 / Vapor mode is not stable yet; the take-home should run on stable releases. |
@@ -119,9 +138,11 @@ mocks      outside the layers, dev/demo only: MSW handlers, store, demo switches
 | Native `<select>` for times | Keyboard, screen readers and mobile pickers work out of the box. |
 | `@/` alias only | Imports read the same everywhere and survive file moves; enforced by ESLint. |
 
+</details>
+
 ## Assumptions (pending confirmation)
 
-The Step 0 questions have not been answered yet; these are the working assumptions.
+Questions sent to the team on 2026-10-27; these are the working assumptions until answered.
 
 - **Time step:** 15 minutes. The UI uses the grid; the server does not enforce it.
 - **"Today":** the user's local time zone.
@@ -132,6 +153,9 @@ The Step 0 questions have not been answered yet; these are the working assumptio
 - If a draft is both invalid and overlapping, the server answers `400` (fix the input first), not `409`.
 
 ## Accessibility and testing evidence
+
+<details>
+<summary>axe on 4 states, contrast numbers, keyboard and focus, 198 tests</summary>
 
 **Automated**
 - 198 tests in 26 files (Vitest): business rules, time helpers, mock server handlers, the HTTP
@@ -161,7 +185,9 @@ The Step 0 questions have not been answered yet; these are the working assumptio
 - No horizontal scroll at 320 px and 375 px; dialogs scroll inside a short landscape viewport.
 - `prefers-reduced-motion` turns animations off; the tab title names the selected day.
 
-## Known limitations / what I'd do next
+</details>
+
+## Not done / what I'd do next
 
 - **Time zones with a real backend:** "today" is the browser's local day. A real server needs the
   user's (or the room's) time zone to judge "past".
@@ -171,7 +197,6 @@ The Step 0 questions have not been answered yet; these are the working assumptio
 - **No end-to-end tests:** next would be a few Playwright flows (create, conflict, delete) against
   the preview build.
 - **No i18n:** English only; dates use a fixed English format.
-- Delete still waits for the list refresh before closing; create/update close immediately.
 - One room, no authentication (out of scope per TASK.md).
 
 ## Deployment (Vercel)
@@ -192,10 +217,7 @@ includes `public/mockServiceWorker.js`, which MSW needs in production.
 
 ## Time spent
 
-About **1 h 40 min** of wall-clock time on 2026-10-27, from the first command at 09:12 to the end
-of Step 8 at about 10:50. The first commit is at 09:21 and the last feature commit at 10:40
-(24 commits). This includes reviewing each step between prompts; it does not include writing the
-plan (`STEPS.md`) beforehand.
+About 1 h 45 min including planning (09:09–10:55), with AI assistance.
 
 ## AI usage
 

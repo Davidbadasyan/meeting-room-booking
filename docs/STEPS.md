@@ -18,11 +18,11 @@ Timebox: 4–6 hours. Commit after each step.
 ## Step 0: Ask questions first (10 min)
 The task explicitly rewards asking. Send these, then keep working and record your assumptions in the README:
 
-> Not sent yet: answered with assumptions, listed in the README as pending confirmation.
-- [ ] Time step for start/end: 15 or 30 minutes?
-- [ ] Which timezone defines "today": the user's local time?
-- [ ] Can a booking that has already started or ended be edited or deleted?
-- [ ] Is `title` optional in the UI as well as in the type?
+> Sent to the team on 2026-10-27. Until answered, the README lists the working assumptions.
+- [x] Time step for start/end: 15 or 30 minutes?
+- [x] Which timezone defines "today": the user's local time?
+- [x] Can a booking that has already started or ended be edited or deleted?
+- [x] Is `title` optional in the UI as well as in the type?
 
 ## Step 1: Project setup (20 min)
 - [x] `npm create vue@latest` and select TypeScript, Vitest, ESLint, Prettier (skip Router unless you want it)

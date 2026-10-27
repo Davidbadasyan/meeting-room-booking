@@ -6,7 +6,7 @@ import { NotFoundError } from '@/shared/api'
 /** Deletes a booking. Resolves with what happened; other errors (network, 400) reject as usual. */
 export function useDeleteBooking() {
   const api = useBookingsApi()
-  const { refreshBookings } = useRefreshBookings()
+  const { refreshBookingsInBackground } = useRefreshBookings()
 
   async function removeBooking(id: string): Promise<DeleteOutcome> {
     try {
@@ -21,7 +21,7 @@ export function useDeleteBooking() {
 
   return useMutation({
     mutationFn: removeBooking,
-    // Both outcomes change the list.
-    onSuccess: refreshBookings,
+    // Both outcomes change the list. Not awaited: the dialog closes and the toast shows right away.
+    onSuccess: refreshBookingsInBackground,
   })
 }

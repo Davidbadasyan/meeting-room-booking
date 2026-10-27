@@ -56,5 +56,5 @@ export function useRefreshBookings() {
     await refreshBookings()
   }
 
-  return { refreshBookings, refreshBookingsInBackground, refreshBookingsIfStale }
+  return { refreshBookingsInBackground, refreshBookingsIfStale }
 }

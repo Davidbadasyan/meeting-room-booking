@@ -38,14 +38,15 @@ function cachedBookings(queryClient: ReturnType<typeof mountDelete>['queryClient
 }
 
 describe('useDeleteBooking', () => {
-  it('deletes the booking and refreshes the list', async () => {
+  it('deletes the booking and refreshes the list in the background', async () => {
     const backend = startTestBackend(server, [PLANNING], NOW)
     const { result: deleteBooking, queryClient } = mountDelete()
     await vi.waitFor(() => expect(cachedBookings(queryClient)).toHaveLength(1))
 
     expect(await deleteBooking.mutateAsync(PLANNING.id)).toBe('deleted')
     expect(backend.store.get(PLANNING.id)).toBeUndefined()
-    expect(cachedBookings(queryClient)).toEqual([])
+    // The list refreshes in the background, after the mutation has already resolved.
+    await vi.waitFor(() => expect(cachedBookings(queryClient)).toEqual([]))
   })
 
   it('treats a booking deleted elsewhere (404) as already deleted and refreshes', async () => {
@@ -55,7 +56,7 @@ describe('useDeleteBooking', () => {
     backend.store.remove(PLANNING.id)
 
     expect(await deleteBooking.mutateAsync(PLANNING.id)).toBe('alreadyDeleted')
-    expect(cachedBookings(queryClient)).toEqual([])
+    await vi.waitFor(() => expect(cachedBookings(queryClient)).toEqual([]))
   })
 
   it('rejects other errors, like a booking that has already started', async () => {
