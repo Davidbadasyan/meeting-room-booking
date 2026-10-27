@@ -6,13 +6,13 @@ one pure function shared by the UI and a mock server (MSW), which also simulates
 failures such as a slot being taken by someone else. Vue 3.5, TypeScript (strict), Feature-Sliced
 Design.
 
-- **Live demo:** _to be added_
-- **Repository:** _to be added_
+- **Live demo:** https://meeting-room-booking-jade.vercel.app
+- **Repository:** https://github.com/Davidbadasyan/meeting-room-booking
 - **Docs:** [Task](docs/TASK.md) · [Implementation steps](docs/STEPS.md) · [Conventions](docs/CONVENTIONS.md)
 
 ## For reviewers: 2-minute tour
 
-1. **Server conflict (rule 8):** open the live demo with `?simulateConflict=1`, click a free
+1. **Server conflict (rule 8):** open [the live demo with `?simulateConflict=1`](https://meeting-room-booking-jade.vercel.app/?simulateConflict=1), click a free
    slot, choose an end time and press **Create booking**. The banner appears, the list refreshes
    with the booking that took the slot, and your input stays.
 2. **A real conflict with two tabs:** open the same day in two tabs, start a booking for a free
@@ -201,7 +201,7 @@ Questions sent to the team on 2026-10-27; these are the working assumptions unti
 
 ## Deployment (Vercel)
 
-Not deployed yet. Settings for a Vercel project:
+Deployed at https://meeting-room-booking-jade.vercel.app with these Vercel settings:
 
 | Setting | Value |
 |---|---|

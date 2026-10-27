@@ -115,7 +115,7 @@ Pure TypeScript, no Vue imports, so it's shared by UI and mock server.
 ## Step 8: Quality checks, deploy, README (30 min)
 - [x] `npm run type-check` (vue-tsc), `npm run lint`, `npm run test` all pass
 - [x] Optional: one component test for the conflict flow (form keeps data after a `409`)
-- [ ] Deploy to Vercel or Netlify (settings documented in the README; not deployed yet)
+- [x] Deploy to Vercel or Netlify (https://meeting-room-booking-jade.vercel.app)
 - [x] Ensure `public/mockServiceWorker.js` exists (`npx msw init public/`) and MSW is enabled in production
 - [x] README:
   - [x] How to run (`npm install`, `npm run dev`, `npm test`)
