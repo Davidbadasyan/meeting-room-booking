@@ -10,4 +10,4 @@ export const store = createBookingStore(createSeed(new Date()), localStoragePers
 export const worker = setupWorker(...createHandlers({ store, latency: latencyFor(search) }))
 
 if (hasDemoFlag(search, 'simulateConflict')) armConflict()
-if (hasDemoFlag(search, 'simulateError')) armListFailures()
+if (hasDemoFlag(search, 'simulateError')) armListFailures(Date.now())

@@ -19,6 +19,7 @@ export {
   WORK_END,
   WORK_START,
 } from '@/entities/booking/config/workingHours'
+export { TITLE_MAX_LENGTH } from '@/entities/booking/config/title'
 export {
   BOOKINGS_ENDPOINT,
   bookingDraftDtoSchema,

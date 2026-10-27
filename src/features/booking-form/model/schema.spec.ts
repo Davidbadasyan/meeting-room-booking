@@ -40,6 +40,13 @@ describe('createBookingFormSchema', () => {
     ])
   })
 
+  it('limits the title to 100 characters, after trimming', () => {
+    expect(issuesFor({ start: '12:00', end: '13:00', title: ` ${'x'.repeat(100)} ` })).toEqual([])
+    expect(issuesFor({ start: '12:00', end: '13:00', title: 'x'.repeat(101) })).toEqual([
+      { field: 'title', message: 'Title can be at most 100 characters' },
+    ])
+  })
+
   it('lets the edited booking keep its own slot', () => {
     expect(issuesFor({ start: '10:00', end: '11:00' }, 'a')).toEqual([])
   })

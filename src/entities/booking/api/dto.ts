@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { TITLE_MAX_LENGTH } from '@/entities/booking/config/title'
 import { isRealDate, TIME_PATTERN } from '@/shared/lib/time'
 
 /**
@@ -19,7 +20,12 @@ function emptyToUndefined(text: string): string | undefined {
 
 export const isoDateSchema = z.string().refine(isRealDate, 'Date must be YYYY-MM-DD')
 const timeSchema = z.string().regex(TIME_PATTERN, 'Time must be HH:mm')
-const titleSchema = z.string().trim().transform(emptyToUndefined).optional()
+const titleSchema = z
+  .string()
+  .trim()
+  .max(TITLE_MAX_LENGTH, `Title must be at most ${TITLE_MAX_LENGTH} characters`)
+  .transform(emptyToUndefined)
+  .optional()
 
 export const bookingDtoSchema = z.object({
   id: z.string(),

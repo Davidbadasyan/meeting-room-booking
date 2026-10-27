@@ -163,6 +163,23 @@ describe('useBookingForm: edit', () => {
     expect(form.title.value).toBe('Planning v2')
     expect(cachedBookings(queryClient, TOMORROW)).toEqual([])
   })
+
+  it('offers to save the kept values as a new booking after a 404', async () => {
+    const backend = startTestBackend(server, [PLANNING], NOW)
+    const { result: form } = mountForm({ date: TOMORROW, booking: PLANNING })
+    expect(form.canCreateAsNew.value).toBe(false)
+    backend.store.remove(PLANNING.id)
+    form.title.value = 'Planning v2'
+    await form.submit()
+    expect(form.canCreateAsNew.value).toBe(true)
+
+    const created = await form.submitAsNew()
+
+    expect(created).toMatchObject({ start: '10:00', end: '11:00', title: 'Planning v2' })
+    expect(created?.id).not.toBe(PLANNING.id)
+    expect(backend.store.byDate(TOMORROW)).toHaveLength(1)
+    expect(form.canCreateAsNew.value).toBe(false)
+  })
 })
 
 describe('useBookingForm: other failures', () => {

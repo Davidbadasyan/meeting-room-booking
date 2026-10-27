@@ -26,7 +26,7 @@ Add these to the page URL (they can be combined, e.g. `?slow=1&simulateConflict=
 | Flag | Effect |
 |---|---|
 | `?simulateConflict=1` | The next valid create or edit: the mock server first saves a "Booked by someone else" booking in that slot, so the request fails with `409`. |
-| `?simulateError=1` | The next two list requests fail with `500` (the first try and the one automatic retry), so the error state shows and **Retry** then works. |
+| `?simulateError=1` | List requests fail with `500` for 5 s after the page loads, so the error state shows; **Retry** after that works. |
 | `?slow=1` | Every response takes 2-4 s, so loading and submitting states are easy to see. |
 
 Each switch fires once per page load; reload to repeat it.

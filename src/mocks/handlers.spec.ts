@@ -93,6 +93,17 @@ describe('POST /api/bookings', () => {
     expect(store.get(created.id)).toEqual(created)
   })
 
+  it('rejects a title longer than 100 characters', async () => {
+    const response = await send('POST', '', {
+      date: TOMORROW,
+      start: '11:00',
+      end: '12:00',
+      title: 'x'.repeat(101),
+    })
+    expect(response.status).toBe(400)
+    expect((await readError(response)).details?.[0]?.field).toBe('title')
+  })
+
   it('drops an empty title', async () => {
     const response = await send('POST', '', {
       date: TOMORROW,

@@ -19,12 +19,7 @@ import {
   type ApiErrorCode,
   type ApiErrorDetail,
 } from '@/shared/api'
-import {
-  consumeConflict,
-  consumeListFailure,
-  NORMAL_LATENCY,
-  type Latency,
-} from '@/mocks/demoScenarios'
+import { consumeConflict, isListFailing, NORMAL_LATENCY, type Latency } from '@/mocks/demoScenarios'
 import type { BookingStore } from '@/mocks/store'
 
 const OTHER_USER_TITLE = 'Booked by someone else'
@@ -104,7 +99,7 @@ export function createHandlers({
   now = () => new Date(),
   latency = NORMAL_LATENCY,
   shouldSimulateConflict = consumeConflict,
-  shouldSimulateListFailure = consumeListFailure,
+  shouldSimulateListFailure = () => isListFailing(Date.now()),
 }: HandlerOptions) {
   const bookingsUrl = `*${BOOKINGS_ENDPOINT}`
   const bookingUrl = `${bookingsUrl}/:id`
@@ -129,8 +124,10 @@ export function createHandlers({
     http.get<PathParams, DefaultBodyType, Booking[] | ApiErrorBody>(
       bookingsUrl,
       async ({ request }) => {
+        // Checked on arrival, so ?slow=1 does not stretch the failure window.
+        const isFailing = shouldSimulateListFailure()
         await wait()
-        if (shouldSimulateListFailure()) return simulatedServerErrorResponse()
+        if (isFailing) return simulatedServerErrorResponse()
 
         const date = isoDateSchema.safeParse(new URL(request.url).searchParams.get('date'))
         if (!date.success) return invalidFormatResponse(date.error)

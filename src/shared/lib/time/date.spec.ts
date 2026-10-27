@@ -40,30 +40,41 @@ describe('isPastTime', () => {
   })
 })
 
-describe('local dates early in the morning (tests run in UTC+4)', () => {
-  // 01:30 local in UTC+4 is still 21:30 the previous day in UTC.
+describe('local dates near midnight (tests run outside UTC, see vitest.config.ts)', () => {
+  // East of UTC the local day starts before the UTC day; west of UTC it ends after it.
+  // One of these two moments is on a different UTC date in any non-UTC time zone.
   const EARLY_MORNING = new Date(2026, 9, 27, 1, 30)
+  const LATE_EVENING = new Date(2026, 9, 27, 23, 30)
+  const LOCAL_DAY = '2026-10-27'
 
-  it('runs in a time zone where UTC is on the previous day', () => {
-    // Guard: without this, the tests below would pass even with a UTC bug.
-    expect(EARLY_MORNING.toISOString().slice(0, 10)).toBe('2026-10-26')
+  it('runs in a time zone where the UTC date differs at one of the two moments', () => {
+    // Guard: in UTC itself the tests below would pass even with a toISOString bug.
+    const utcDays = [EARLY_MORNING, LATE_EVENING].map((moment) => moment.toISOString().slice(0, 10))
+    expect(utcDays).not.toEqual([LOCAL_DAY, LOCAL_DAY])
   })
 
-  it('formats the local calendar date, not the UTC one', () => {
-    expect(toIsoDate(EARLY_MORNING)).toBe('2026-10-27')
+  it.each([
+    ['01:30', EARLY_MORNING],
+    ['23:30', LATE_EVENING],
+  ])('formats the local calendar date at %s', (_, moment) => {
+    expect(toIsoDate(moment)).toBe(LOCAL_DAY)
   })
 
-  it('treats today as today and yesterday as past', () => {
-    expect(isPastDate('2026-10-27', EARLY_MORNING)).toBe(false)
-    expect(isPastDate('2026-10-26', EARLY_MORNING)).toBe(true)
+  it.each([
+    ['01:30', EARLY_MORNING],
+    ['23:30', LATE_EVENING],
+  ])('treats today as today and yesterday as past at %s', (_, moment) => {
+    expect(isPastDate(LOCAL_DAY, moment)).toBe(false)
+    expect(isPastDate('2026-10-26', moment)).toBe(true)
   })
 
   it('compares times against local minutes', () => {
-    expect(isPastTime('2026-10-27', '01:00', EARLY_MORNING)).toBe(true)
-    expect(isPastTime('2026-10-27', '09:00', EARLY_MORNING)).toBe(false)
+    expect(isPastTime(LOCAL_DAY, '01:00', EARLY_MORNING)).toBe(true)
+    expect(isPastTime(LOCAL_DAY, '09:00', EARLY_MORNING)).toBe(false)
+    expect(isPastTime(LOCAL_DAY, '17:00', LATE_EVENING)).toBe(true)
   })
 
   it('parses a date string as a local date', () => {
-    expect(isRealDate('2026-10-27')).toBe(true)
+    expect(isRealDate(LOCAL_DAY)).toBe(true)
   })
 })

@@ -1,6 +1,6 @@
 import { useForm } from 'vee-validate'
 import { computed, toValue, watch, type MaybeRefOrGetter } from 'vue'
-import type { Booking } from '@/entities/booking'
+import type { Booking, BookingDraft } from '@/entities/booking'
 import { useSaveBooking } from '@/features/booking-form/api/useSaveBooking'
 import { toDraft, toFormValues, type BookingFormValues } from '@/features/booking-form/model/schema'
 import { useRulesSchema } from '@/features/booking-form/model/useRulesSchema'
@@ -29,7 +29,7 @@ export function useBookingForm({ date, booking }: UseBookingFormOptions) {
   const [start] = form.defineField('start')
   const [end] = form.defineField('end')
   const [title] = form.defineField('title')
-  const { saveBooking } = useSaveBooking(editingId)
+  const { saveBooking, createBooking } = useSaveBooking(editingId)
   const problem = useSubmitProblem(form)
 
   // Start over only when a different day or booking is opened, never on a list refresh.
@@ -38,10 +38,13 @@ export function useBookingForm({ date, booking }: UseBookingFormOptions) {
     form.resetForm({ values: toFormValues(toValue(date), toValue(booking)) })
   })
 
-  async function save(values: BookingFormValues): Promise<Booking | undefined> {
+  async function trySave(
+    send: (draft: BookingDraft) => Promise<Booking>,
+    values: BookingFormValues,
+  ): Promise<Booking | undefined> {
     problem.clearSubmitProblem()
     try {
-      return await saveBooking(toDraft(values))
+      return await send(toDraft(values))
     } catch (error) {
       await problem.reportSubmitError(error)
       return undefined
@@ -58,7 +61,11 @@ export function useBookingForm({ date, booking }: UseBookingFormOptions) {
     submitProblem: problem.submitProblem,
     submitMessage: problem.submitMessage,
     serverMessages: problem.serverMessages,
+    /** After a 404 on edit, the same values can still be saved as a new booking. */
+    canCreateAsNew: computed(() => problem.submitProblem.value === 'notFound'),
     /** Validates, then saves. Resolves with the saved booking, or undefined if it failed. */
-    submit: form.handleSubmit(save),
+    submit: form.handleSubmit((values) => trySave(saveBooking, values)),
+    /** Validates, then creates a new booking from the current values. */
+    submitAsNew: form.handleSubmit((values) => trySave(createBooking, values)),
   }
 }

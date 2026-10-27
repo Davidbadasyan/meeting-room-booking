@@ -3,8 +3,8 @@ import {
   armConflict,
   armListFailures,
   consumeConflict,
-  consumeListFailure,
   hasDemoFlag,
+  isListFailing,
   latencyFor,
   NORMAL_LATENCY,
   SLOW_LATENCY,
@@ -25,12 +25,13 @@ describe('demoScenarios', () => {
     expect(consumeConflict()).toBe(false)
   })
 
-  it('fails two list requests per arming (first try + one automatic retry)', () => {
-    expect(consumeListFailure()).toBe(false)
-    armListFailures()
-    expect(consumeListFailure()).toBe(true)
-    expect(consumeListFailure()).toBe(true)
-    expect(consumeListFailure()).toBe(false)
+  it('fails list requests for 5 s after arming, however often the client retries', () => {
+    const armedAt = 1_000_000
+    expect(isListFailing(armedAt)).toBe(false)
+    armListFailures(armedAt)
+    expect(isListFailing(armedAt)).toBe(true)
+    expect(isListFailing(armedAt + 4999)).toBe(true)
+    expect(isListFailing(armedAt + 5000)).toBe(false)
   })
 
   it('picks slow latency with ?slow=1', () => {

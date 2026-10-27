@@ -15,7 +15,8 @@
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/",
-    "lint:arch": "steiger ./src"
+    "lint:arch": "steiger ./src",
+    "test:tz": "TEST_TZ=Asia/Dubai vitest run src/shared/lib/time src/entities/booking/model && TEST_TZ=America/Los_Angeles vitest run src/shared/lib/time src/entities/booking/model"
   },
   "dependencies": {
     "@tanstack/vue-query": "^5.105.0",

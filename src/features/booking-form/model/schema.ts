@@ -1,5 +1,10 @@
 import { z } from 'zod'
-import { validateBooking, type Booking, type BookingDraft } from '@/entities/booking'
+import {
+  TITLE_MAX_LENGTH,
+  validateBooking,
+  type Booking,
+  type BookingDraft,
+} from '@/entities/booking'
 import { fieldFormatMessages } from '@/features/booking-form/config/messages'
 import { isRealDate, TIME_PATTERN, type IsoDate } from '@/shared/lib/time'
 
@@ -23,7 +28,7 @@ const formatSchema = z.object({
   date: z.string().refine(isRealDate, fieldFormatMessages.date),
   start: z.string().regex(TIME_PATTERN, fieldFormatMessages.start),
   end: z.string().regex(TIME_PATTERN, fieldFormatMessages.end),
-  title: z.string().trim(),
+  title: z.string().trim().max(TITLE_MAX_LENGTH, fieldFormatMessages.title),
 })
 
 /**

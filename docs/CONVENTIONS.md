@@ -117,3 +117,6 @@ npm test             # Vitest
 | Steiger `import-locality` off | Conflicts with the `@/` alias rule |
 | Added `ServerError` | 500s and malformed responses are not network errors |
 | Mock bundle is lazy-loaded | Only loaded in mock mode; the real-backend build doesn't include it |
+| Tests run in a pinned time zone (`TEST_TZ`, default `Asia/Dubai`); `npm run test:tz` adds `America/Los_Angeles` | A `toISOString`-style UTC bug only shows when the local and UTC dates differ; in UTC it would pass silently |
+| `src/mocks/testing.ts` is excluded from `tsconfig.app.json` and type-checked by `tsconfig.vitest.json` | It uses Node-only MSW types and `@vue/test-utils`, which do not belong in the app build |
+| Steiger `insignificant-slice` is `warn` until every slice is used by the UI (back to `error` in Step 6) | Features exist before the pages that use them |

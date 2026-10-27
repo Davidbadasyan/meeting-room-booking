@@ -1,3 +1,5 @@
+import { TITLE_MAX_LENGTH } from '@/entities/booking'
+
 /** Why the last submit failed, as shown above the form. */
 export type SubmitProblem = 'conflict' | 'notFound' | 'invalid' | 'network' | 'failed'
 
@@ -14,4 +16,5 @@ export const fieldFormatMessages = {
   date: 'Choose a valid date',
   start: 'Choose a start time',
   end: 'Choose an end time',
+  title: `Title can be at most ${TITLE_MAX_LENGTH} characters`,
 }
